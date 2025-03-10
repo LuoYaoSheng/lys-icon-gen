@@ -1,5 +1,5 @@
 {
-  "checkList": ["Android","iOS","MacOS","watchOS","Win"],
+  "checkList": ["Android","iOS","Harmony","MacOS","watchOS","Win"],
   "csFiles":["",""],
   "autoFiles":1,
   "autoFilesPath":"",

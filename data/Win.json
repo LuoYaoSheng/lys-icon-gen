@@ -1,48 +1,88 @@
 {
-  "images" : [
+  "images": [
     {
-      "idiom" : "超大图标",
-      "size" : "256x256",
-      "scale" : "1x"
+      "size": "60x60",
+      "idiom": "desktop",
+      "scale": "2x",
+      "usage": "主屏幕应用图标"
     },
     {
-      "idiom" : "大图标",
-      "size" : "128x128",
-      "scale" : "1x"
+      "size": "60x60",
+      "idiom": "desktop",
+      "scale": "3x",
+      "usage": "主屏幕应用图标"
     },
     {
-      "idiom" : "200% DPI scale",
-      "size" : "64x64",
-      "scale" : "1x"
+      "size": "83.5x83.5",
+      "idiom": "desktop",
+      "scale": "2x",
+      "usage": "主屏幕应用图标"
     },
     {
-      "idiom" : "150% DPI scale",
-      "size" : "48x48",
-      "scale" : "1x"
+      "size": "76x76",
+      "idiom": "desktop",
+      "scale": "2x",
+      "usage": "主屏幕应用图标"
     },
     {
-      "idiom" : "中图标/平铺",
-      "size" : "32x32",
-      "scale" : "1x"
+      "size": "1024x1024",
+      "idiom": "desktop",
+      "scale": "1x",
+      "usage": "App Store图标"
     },
     {
-      "idiom" : "150% DPI scale",
-      "size" : "24x24",
-      "scale" : "1x"
+      "size": "40x40",
+      "idiom": "desktop",
+      "scale": "2x",
+      "usage": "Spotlight搜索图标"
     },
     {
-      "idiom" : "列表、详细信息",
-      "size" : "20x20",
-      "scale" : "1x"
+      "size": "40x40",
+      "idiom": "desktop",
+      "scale": "3x",
+      "usage": "Spotlight搜索图标"
     },
     {
-      "idiom" : "列表、详细信息",
-      "size" : "16x16",
-      "scale" : "1x"
+      "size": "50x50",
+      "idiom": "desktop",
+      "scale": "1x",
+      "usage": "Spotlight搜索图标"
+    },
+    {
+      "size": "50x50",
+      "idiom": "desktop",
+      "scale": "2x",
+      "usage": "Spotlight搜索图标"
+    },
+    {
+      "size": "29x29",
+      "idiom": "desktop",
+      "scale": "2x",
+      "usage": "设置图标"
+    },
+    {
+      "size": "29x29",
+      "idiom": "desktop",
+      "scale": "3x",
+      "usage": "设置图标"
+    },
+    {
+      "size": "20x20",
+      "idiom": "desktop",
+      "scale": "2x",
+      "usage": "通知栏图标"
+    },
+    {
+      "size": "20x20",
+      "idiom": "desktop",
+      "scale": "3x",
+      "usage": "通知栏图标"
     }
   ],
-  "info" : {
-    "version" : 1,
-    "author" : "xcode"
+  "info": {
+    "version": 1,
+    "author": "罗耀生",
+    "copyright": "© 2025 i2kai.com",
+    "description": "这是一个简单的图标处理应用。"
   }
 }

@@ -1,38 +1,94 @@
 {
-    "images" : [
-      {
-        "size" : "36x36",
-        "idiom" : "LDPI",
-        "scale" : "1x"
-      },
-      {
-        "size" : "48x48",
-        "idiom" : "MDPI",
-        "scale" : "1x"
-      },
-      {
-        "size" : "72x72",
-        "idiom" : "HDPI",
-        "scale" : "1x"
-      },
-      {
-        "size" : "96x96",
-        "idiom" : "xhdpi",
-        "scale" : "1x"
-      },
-      {
-        "size" : "144x144",
-        "idiom" : "XXH DPI",
-        "scale" : "1x"
-      },
-      {
-        "size" : "192x192",
-        "idiom" : "XXXH DPI",
-        "scale" : "1x"
-      }
+    "images": [
+        {
+            "size": "36x36",
+            "idiom": "LDPI",
+            "scale": "1x",
+            "usage": "主屏幕应用图标"
+        },
+        {
+            "size": "48x48",
+            "idiom": "MDPI",
+            "scale": "1x",
+            "usage": "主屏幕应用图标"
+        },
+        {
+            "size": "72x72",
+            "idiom": "HDPI",
+            "scale": "1x",
+            "usage": "主屏幕应用图标"
+        },
+        {
+            "size": "96x96",
+            "idiom": "xhdpi",
+            "scale": "1x",
+            "usage": "主屏幕应用图标"
+        },
+        {
+            "size": "144x144",
+            "idiom": "XXHDPI",
+            "scale": "1x",
+            "usage": "主屏幕应用图标"
+        },
+        {
+            "size": "192x192",
+            "idiom": "XXXHDPI",
+            "scale": "1x",
+            "usage": "主屏幕应用图标"
+        },
+        {
+            "size": "40x40",
+            "idiom": "universal",
+            "scale": "2x",
+            "usage": "Spotlight搜索图标"
+        },
+        {
+            "size": "40x40",
+            "idiom": "universal",
+            "scale": "3x",
+            "usage": "Spotlight搜索图标"
+        },
+        {
+            "size": "50x50",
+            "idiom": "universal",
+            "scale": "1x",
+            "usage": "Spotlight搜索图标"
+        },
+        {
+            "size": "50x50",
+            "idiom": "universal",
+            "scale": "2x",
+            "usage": "Spotlight搜索图标"
+        },
+        {
+            "size": "29x29",
+            "idiom": "universal",
+            "scale": "2x",
+            "usage": "设置图标"
+        },
+        {
+            "size": "29x29",
+            "idiom": "universal",
+            "scale": "3x",
+            "usage": "设置图标"
+        },
+        {
+            "size": "20x20",
+            "idiom": "universal",
+            "scale": "2x",
+            "usage": "通知栏图标"
+        },
+        {
+            "size": "20x20",
+            "idiom": "universal",
+            "scale": "3x",
+            "usage": "通知栏图标"
+        }
     ],
-    "info" : {
-      "version" : 1,
-      "author" : "xcode"
+    "info": {
+        "version": 1,
+        "author": "罗耀生",
+        "copyright": "© 2025 i2kai.com",
+        "description": "这是一个简单的图标处理应用。"
     }
-  }
+}

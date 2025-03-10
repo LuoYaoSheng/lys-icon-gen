@@ -5,6 +5,7 @@ body{
     background-color:  #313131 !important;
     -webkit-user-select: none;
     -webkit-app-region: drag;
+    overflow: hidden; /* 隐藏滚动条 */
 }
 
 .win-title{
