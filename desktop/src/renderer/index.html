@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iconsize</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="titlebar" id="titlebar"></div>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <img src="../assets/icon.png" alt="iconsize logo" class="logo-img">
+      </div>
+      <h1>iconsize</h1>
+      <p>快速生成各平台所需的应用图标</p>
+    </header>
+    
+    <div class="main">
+      <!-- 左侧面板 -->
+      <div class="left-panel">
+        <!-- 上传/预览区域 -->
+        <div class="upload-section">
+          <h2>上传图标</h2>
+          
+          <!-- 上传区域 - 初始状态 -->
+          <div id="dropArea" class="drop-area">
+            <div class="icon-container">
+              <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <p>点击或拖放图片到此处</p>
+            <p class="small">建议使用1024×1024像素的正方形PNG图片</p>
+            <button class="btn">选择图片</button>
+            <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" style="display: none;">
+          </div>
+          
+          <!-- 预览区域 - 将在上传后显示，替换上传区域 -->
+          <div id="previewContainer" class="preview-container" style="display: none;">
+            <!-- 预览图片将在这里显示 -->
+          </div>
+          <div id="imageInfo" class="image-info" style="display: none;">
+            <!-- 图片信息将在这里显示 -->
+          </div>
+          
+          <!-- 重新上传按钮 - 将在上传后显示 -->
+          <div id="previewControls" class="preview-controls" style="display: none;">
+            <button id="reuploadButton" class="btn">重新上传</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 右侧面板 -->
+      <div id="rightPanel" class="right-panel">
+        <!-- 设置区域 -->
+        <div class="settings-section">
+          <h2>设置</h2>
+          <div class="setting-group">
+            <label>选择目标平台：</label>
+            <div class="platform-container">
+              <div class="platform-item">
+                <input type="checkbox" id="ios" value="iOS" class="platform-checkbox" checked>
+                <label for="ios">iOS</label>
+              </div>
+              <div class="platform-item">
+                <input type="checkbox" id="android" value="Android" class="platform-checkbox" checked>
+                <label for="android">Android</label>
+              </div>
+              <div class="platform-item">
+                <input type="checkbox" id="macos" value="macOS" class="platform-checkbox">
+                <label for="macos">macOS</label>
+              </div>
+              <div class="platform-item">
+                <input type="checkbox" id="windows" value="Windows" class="platform-checkbox">
+                <label for="windows">Windows</label>
+              </div>
+              <div class="platform-item">
+                <input type="checkbox" id="watchos" value="watchOS" class="platform-checkbox">
+                <label for="watchos">watchOS</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="setting-group">
+            <label>输出设置：</label>
+            <div class="output-container">
+              <div class="output-path">
+                <input type="text" id="outputPath" placeholder="选择输出目录..." readonly>
+                <button id="browseButton" class="btn">浏览...</button>
+              </div>
+              <div class="output-options">
+                <div class="checkbox-item">
+                  <input type="checkbox" id="createSubFolders" checked>
+                  <label for="createSubFolders">为每个平台创建子文件夹</label>
+                </div>
+                <div class="checkbox-item">
+                  <input type="checkbox" id="prefixFilename">
+                  <label for="prefixFilename">为图标文件名添加平台前缀</label>
+                </div>
+                <div class="checkbox-item">
+                  <input type="checkbox" id="createContentsJson" checked>
+                  <label for="createContentsJson">为iOS/macOS创建Contents.json文件</label>
+                </div>
+                <div class="checkbox-item">
+                  <input type="checkbox" id="createAdaptiveIcons" checked>
+                  <label for="createAdaptiveIcons">为Android创建自适应图标相关文件</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 生成和导出按钮区域 -->
+        <div class="action-section">
+          <button id="generateButton" class="btn btn-primary btn-lg" disabled>生成图标</button>
+          <div class="export-section">
+            <button id="exportButton" class="btn btn-success" disabled>导出到文件夹</button>
+            <button id="openFolderButton" class="btn" disabled>打开输出文件夹</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <footer>
+      <p>© 2023 iconsize | 开发者：<a href="https://i2kai.com" target="_blank">罗耀生</a> | 公众号：极客第一行</p>
+    </footer>
+  </div>
+  
+  <!-- 通知组件 -->
+  <div id="notification" class="notification">
+    <div id="notificationContent" class="notification-content">
+      通知内容
+    </div>
+  </div>
+  
+  <script src="renderer.js"></script>
+</body>
+</html> 

@@ -1,0 +1,70 @@
+{
+  "name": "iconsize",
+  "version": "1.0.0",
+  "description": "图标生成器桌面版本",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --debug",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "pack:mac": "electron-packager . iconsize --platform=darwin --arch=x64 --out=dist --icon=src/assets/icon.icns --overwrite"
+  },
+  "keywords": [
+    "icon",
+    "generator",
+    "electron",
+    "desktop",
+    "image"
+  ],
+  "author": "罗耀生",
+  "license": "Apache-2.0",
+  "homepage": "https://i2kai.com",
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "electron": "^25.2.0",
+    "electron-builder": "^24.6.3",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.iconsize.app",
+    "productName": "iconsize",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "src/assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "src/assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+} 

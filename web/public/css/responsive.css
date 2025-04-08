@@ -1,0 +1,145 @@
+/* 响应式布局样式 */
+
+/* 大屏幕设备（台式机、笔记本等） */
+@media (min-width: 1200px) {
+  .container {
+    padding: 30px;
+  }
+}
+
+/* 中等屏幕设备（平板等） */
+@media (max-width: 1199px) and (min-width: 768px) {
+  .container {
+    padding: 20px;
+  }
+  
+  header h1 {
+    font-size: 2.2rem;
+  }
+  
+  .card-body {
+    padding: 1.2rem;
+  }
+}
+
+/* 小屏幕设备（手机等） */
+@media (max-width: 767px) {
+  .container {
+    padding: 15px;
+  }
+  
+  header {
+    padding: 1.5rem 0;
+  }
+  
+  header h1 {
+    font-size: 1.8rem;
+  }
+  
+  header p {
+    font-size: 1rem;
+  }
+  
+  .card-header {
+    padding: 0.8rem 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .card-header h2 {
+    margin-bottom: 0.5rem;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .drop-area {
+    padding: 1.5rem 1rem;
+  }
+  
+  .platforms-container {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  
+  .options-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .button-container {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .button-container .btn {
+    width: 100%;
+  }
+  
+  .result-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 1rem;
+  }
+  
+  .tab-nav {
+    margin-top: 0.5rem;
+  }
+  
+  .notification {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}
+
+/* 超小屏幕设备 */
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .platforms-container {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .result-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  }
+  
+  .icon-item img {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .icon-name {
+    max-width: 70px;
+  }
+}
+
+/* 横屏模式下的调整 */
+@media (max-height: 600px) and (orientation: landscape) {
+  header {
+    padding: 1rem 0;
+  }
+  
+  header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  header p {
+    font-size: 0.9rem;
+  }
+  
+  .section {
+    margin-bottom: 1rem;
+  }
+  
+  .card {
+    margin-bottom: 1rem;
+  }
+  
+  .preview-container img {
+    max-height: 150px;
+  }
+} 
