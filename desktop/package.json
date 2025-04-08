@@ -1,6 +1,6 @@
 {
   "name": "iconsize",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "图标生成器桌面版本",
   "main": "src/main/main.js",
   "scripts": {
@@ -10,7 +10,9 @@
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win",
     "build:linux": "electron-builder --linux",
-    "pack:mac": "electron-packager . iconsize --platform=darwin --arch=x64 --out=dist --icon=src/assets/icon.icns --overwrite"
+    "pack:mac": "electron-packager . iconsize --platform=darwin --arch=x64 --out=dist --icon=src/assets/app.icns --overwrite",
+    "dist:mac": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --dir",
+    "make:dmg": "create-dmg dist/iconsize-darwin-x64/iconsize.app dist/ --overwrite --icon 'src/assets/app.icns' --icon-size 128 --app-drop-link 380 240 --title 'iconsize 3.0.0'"
   },
   "keywords": [
     "icon",
@@ -46,7 +48,7 @@
         "dmg",
         "zip"
       ],
-      "icon": "src/assets/icon.icns"
+      "icon": "src/assets/app.icns"
     },
     "win": {
       "target": [

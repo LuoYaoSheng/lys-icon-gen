@@ -182,7 +182,7 @@ function showAboutDialog() {
   dialog.showMessageBox(mainWindow, {
     title: '关于 iconsize',
     message: 'iconsize 图标生成器',
-    detail: '版本 1.0.0\n\n开发者：罗耀生\n官网：https://i2kai.com\n公众号：极客第一行\n\n© 2023',
+    detail: '版本 3.0.0\n\n开发者：罗耀生\n官网：https://i2kai.com\n公众号：极客第一行\n\n© 2023',
     buttons: ['确定'],
     icon: path.join(__dirname, '../assets/icon.png')
   });

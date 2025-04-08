@@ -1,0 +1,35 @@
+appId: com.iconsize.app
+productName: iconsize
+copyright: Copyright © 2023 罗耀生
+
+directories:
+  output: dist
+  buildResources: src/assets
+
+files:
+  - src/**/*
+  - package.json
+
+electronDownload:
+  cache: ~/.electron-cache
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dir
+    - dmg
+  icon: src/assets/icon.icns
+  darkModeSupport: true
+  artifactName: ${productName}-${version}-mac.${ext}
+
+dmg:
+  icon: src/assets/icon.icns
+  iconSize: 128
+  contents:
+    - x: 380
+      y: 240
+      type: link
+      path: /Applications
+    - x: 122
+      y: 240
+      type: file 

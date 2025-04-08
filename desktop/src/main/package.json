@@ -1,1 +1,14 @@
- 
+{
+  "name": "iconsize",
+  "productName": "iconsize",
+  "version": "3.0.0",
+  "description": "快速生成各平台所需的应用图标",
+  "main": "main.js",
+  "author": "罗耀生",
+  "license": "MIT",
+  "homepage": "https://i2kai.com",
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "sharp": "^0.30.7"
+  }
+} 
