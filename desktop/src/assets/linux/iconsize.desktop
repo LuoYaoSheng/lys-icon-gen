@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=iconsize
+Comment=快速生成各平台所需的应用图标
+Exec=/usr/bin/iconsize
+Icon=iconsize
+Terminal=false
+Type=Application
+Categories=Graphics;Utility;
+StartupNotify=true
+StartupWMClass=iconsize 

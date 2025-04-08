@@ -10,7 +10,10 @@
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win",
     "build:linux": "electron-builder --linux",
+    "build:deb": "electron-builder --linux deb",
+    "build:appimage": "electron-builder --linux AppImage",
     "pack:mac": "electron-packager . iconsize --platform=darwin --arch=x64 --out=dist --icon=src/assets/app.icns --overwrite",
+    "pack:linux": "electron-packager . iconsize --platform=linux --arch=x64 --out=dist --icon=src/assets/iconsize.png --overwrite",
     "dist:mac": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --dir",
     "make:dmg": "create-dmg dist/iconsize-darwin-x64/iconsize.app dist/ --overwrite --icon 'src/assets/app.icns' --icon-size 128 --app-drop-link 380 240 --title 'iconsize 3.0.0'"
   },
@@ -48,25 +51,39 @@
         "dmg",
         "zip"
       ],
-      "icon": "src/assets/app.icns"
+      "icon": "src/assets/app.icns",
+      "identity": null
     },
     "win": {
       "target": [
         "nsis",
-        "portable"
+        "portable",
+        "zip"
       ],
       "icon": "src/assets/icon.ico"
     },
     "linux": {
       "target": [
-        "AppImage",
-        "deb"
+        "AppImage"
       ],
-      "category": "Development"
+      "icon": "src/assets/iconsize.png",
+      "category": "Graphics",
+      "maintainer": "罗耀生",
+      "vendor": "i2kai.com"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
+    }
+  },
+  "config": {
+    "electron": {
+      "mirror": "https://github.com/electron/electron/releases/download/",
+      "cache": "$HOME/.cache/electron"
+    },
+    "electron_builder": {
+      "mirror": "https://github.com/electron-userland/electron-builder-binaries/releases/download/",
+      "cache": "$HOME/.cache/electron-builder"
     }
   }
 } 

@@ -16,11 +16,38 @@ electronDownload:
 mac:
   category: public.app-category.developer-tools
   target:
-    - dir
     - dmg
-  icon: src/assets/icon.icns
+    - zip
+  icon: src/assets/app.icns
   darkModeSupport: true
   artifactName: ${productName}-${version}-mac.${ext}
+  identity: null  # 在Docker中构建时不进行签名
+
+linux:
+  category: Graphics
+  icon: src/assets/iconsize.png
+  target:
+    - AppImage
+    # 暂时注释掉可能导致问题的格式
+    # - deb 
+    # - rpm
+  artifactName: ${productName}-${version}-linux.${ext}
+  maintainer: 罗耀生
+  vendor: i2kai.com
+  synopsis: 图标生成器
+  description: 快速生成各平台所需的应用图标
+  desktop:
+    Name: iconsize
+    Comment: 快速生成各平台所需的应用图标
+    Categories: Graphics;Utility;
+    StartupWMClass: iconsize
+
+deb:
+  depends:
+    - libnotify4
+    - libxtst6
+    - libnss3
+  afterInstall: src/assets/linux/after-install.sh
 
 dmg:
   icon: src/assets/icon.icns
@@ -32,4 +59,15 @@ dmg:
       path: /Applications
     - x: 122
       y: 240
-      type: file 
+      type: file
+
+appImage:
+  license: LICENSE
+
+win:
+  icon: src/assets/icon.ico
+  target:
+    - nsis
+    - portable
+    - zip
+  artifactName: ${productName}-${version}-win.${ext} 

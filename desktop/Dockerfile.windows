@@ -1,0 +1,34 @@
+FROM electronuserland/builder:wine
+
+# 设置工作目录
+WORKDIR /app
+
+# 设置环境变量
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+ENV ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true
+ENV npm_config_registry=https://registry.npmjs.org/
+ENV npm_config_electron_mirror=https://github.com/electron/electron/releases/download/
+ENV npm_config_electron_builder_binaries_mirror=https://github.com/electron-userland/electron-builder-binaries/releases/download/
+ENV DEBUG=electron-builder
+
+# 复制package.json和package-lock.json
+COPY package.json ./
+COPY package-lock.json ./
+COPY .npmrc ./
+
+# 安装依赖
+RUN npm install
+
+# 复制源代码
+COPY . .
+
+# 设置npm缓存目录
+RUN mkdir -p /root/.cache/electron
+RUN mkdir -p /root/.cache/electron-builder
+
+# 设置构建参数
+ENV ELECTRON_CACHE="/root/.cache/electron"
+ENV ELECTRON_BUILDER_CACHE="/root/.cache/electron-builder"
+
+# 设置构建命令
+CMD ["npm", "run", "build:win"] 
