@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="iconsize - 轻松生成各平台所需的应用图标">
+  <title>iconsize | 多平台图标生成工具</title>
+  
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="assets/img/favicon.ico" type="image/x-icon">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body>
+  <!-- 头部导航 -->
+  <header class="header">
+    <div class="container">
+      <div class="logo">
+        <img src="assets/img/iconsize.jpg" alt="iconsize logo">
+        <span>iconsize</span>
+      </div>
+      
+      <button class="mobile-menu-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      
+      <ul class="nav-menu">
+        <li><a href="#features">特性</a></li>
+        <li><a href="#how-it-works">使用方法</a></li>
+        <li><a href="#download">下载</a></li>
+        <li><a href="#faq">常见问题</a></li>
+        <li><a href="#contact">联系我们</a></li>
+        <li><a href="https://gitee.com/luoyaosheng/iconsize" target="_blank">Gitee</a></li>
+      </ul>
+    </div>
+  </header>
+  
+  <!-- 主要内容 -->
+  <main class="main-content">
+    <!-- 英雄区 -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="animate fadeIn">一键生成所有平台图标</h1>
+        <p class="animate fadeIn" style="animation-delay: 0.2s;">iconsize 是一款高效的图标生成工具，帮助开发者快速为多平台应用创建所需的各种尺寸图标</p>
+        <div class="hero-buttons">
+          <a href="#download" class="btn btn-primary animate fadeIn" style="animation-delay: 0.4s;">立即下载</a>
+          <a href="#how-it-works" class="btn btn-outline animate fadeIn" style="animation-delay: 0.6s;">了解更多</a>
+        </div>
+        
+        <div class="hero-platforms animate fadeIn" style="animation-delay: 0.8s;">
+          <span class="platform-icon"><i class="fab fa-apple"></i></span>
+          <span class="platform-icon"><i class="fab fa-android"></i></span>
+          <span class="platform-icon"><i class="fab fa-windows"></i></span>
+          <span class="platform-icon"><i class="fab fa-linux"></i></span>
+        </div>
+        
+        <div class="hero-screenshot animate fadeIn" style="animation-delay: 1s;">
+          <img src="assets/img/screenshots/iconsize.gif" alt="iconsize 使用演示" class="screenshot-gif">
+        </div>
+      </div>
+      
+      <div class="hero-background">
+        <div class="floating-circle" style="width: 300px; height: 300px; top: 20%; left: 10%; animation: float 8s ease-in-out infinite;"></div>
+        <div class="floating-circle" style="width: 200px; height: 200px; top: 60%; left: 80%; animation: float 10s ease-in-out infinite 1s;"></div>
+        <div class="floating-circle" style="width: 150px; height: 150px; top: 30%; left: 70%; animation: float 7s ease-in-out infinite 0.5s;"></div>
+        <div class="floating-icon" style="top: 25%; left: 30%; animation: float 9s ease-in-out infinite 0.2s;"><i class="fas fa-mobile-alt"></i></div>
+        <div class="floating-icon" style="top: 55%; left: 20%; animation: float 7s ease-in-out infinite 1.5s;"><i class="fas fa-desktop"></i></div>
+        <div class="floating-icon" style="top: 40%; left: 85%; animation: float 8s ease-in-out infinite 1s;"><i class="fas fa-tablet-alt"></i></div>
+      </div>
+    </section>
+    
+    <!-- 特性区域 -->
+    <section id="features" class="features">
+      <div class="container">
+        <div class="section-title">
+          <h2 class="animate fadeIn">强大功能，简单操作</h2>
+          <p class="section-subtitle animate fadeIn">为您的应用创建高质量图标，支持所有主流平台，无需复杂设计工具</p>
+        </div>
+        
+        <div class="features-grid">
+          <div class="feature-card animate fadeIn">
+            <div class="feature-icon">
+              <i class="fas fa-bolt"></i>
+            </div>
+            <h3>快速生成</h3>
+            <p>只需上传一张高质量图片，一键生成所有平台所需的各种尺寸图标</p>
+          </div>
+          
+          <div class="feature-card animate fadeIn" style="animation-delay: 0.2s;">
+            <div class="feature-icon">
+              <i class="fas fa-mobile-alt"></i>
+            </div>
+            <h3>多平台支持</h3>
+            <p>支持 iOS、Android、macOS、Windows、watchOS 等多个平台的图标生成</p>
+          </div>
+          
+          <div class="feature-card animate fadeIn" style="animation-delay: 0.4s;">
+            <div class="feature-icon">
+              <i class="fas fa-code"></i>
+            </div>
+            <h3>开发者友好</h3>
+            <p>提供易用的桌面应用界面，方便开发者快速生成图标并集成到项目中</p>
+          </div>
+          
+          <div class="feature-card animate fadeIn" style="animation-delay: 0.6s;">
+            <div class="feature-icon">
+              <i class="fas fa-desktop"></i>
+            </div>
+            <h3>桌面应用</h3>
+            <p>提供功能完善的桌面版本，支持跨平台，拖放即用，无需依赖网络</p>
+          </div>
+          
+          <div class="feature-card animate fadeIn" style="animation-delay: 0.8s;">
+            <div class="feature-icon">
+              <i class="fas fa-palette"></i>
+            </div>
+            <h3>图像优化</h3>
+            <p>自动进行图像优化处理，确保生成的图标清晰、锐利、符合平台规范</p>
+          </div>
+          
+          <div class="feature-card animate fadeIn" style="animation-delay: 1s;">
+            <div class="feature-icon">
+              <i class="fas fa-folder-open"></i>
+            </div>
+            <h3>结构化输出</h3>
+            <p>生成的图标按平台和尺寸组织，结构清晰，方便集成到开发项目中</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 效果展示区 -->
+    <section class="showcase">
+      <div class="container">
+        <div class="section-title">
+          <h2 class="animate fadeIn">实际效果一目了然</h2>
+          <p class="section-subtitle animate fadeIn">查看iconsize生成的高质量图标效果</p>
+        </div>
+        
+        <div class="showcase-container animate fadeIn">
+          <div class="showcase-image">
+            <img src="assets/img/iconsize.jpg" alt="示例图标" class="source-icon">
+            <div class="arrows">
+              <i class="fas fa-long-arrow-alt-right"></i>
+            </div>
+            <div class="platforms-preview">
+              <div class="platform-preview">
+                <div class="platform-label">iOS</div>
+                <div class="platform-icons">
+                  <div class="icon-preview size-180"><img src="assets/img/iconsize.jpg" alt="iOS图标"></div>
+                  <div class="icon-preview size-120"><img src="assets/img/iconsize.jpg" alt="iOS图标"></div>
+                  <div class="icon-preview size-80"><img src="assets/img/iconsize.jpg" alt="iOS图标"></div>
+                </div>
+              </div>
+              <div class="platform-preview">
+                <div class="platform-label">Android</div>
+                <div class="platform-icons">
+                  <div class="icon-preview size-192"><img src="assets/img/iconsize.jpg" alt="Android图标"></div>
+                  <div class="icon-preview size-144"><img src="assets/img/iconsize.jpg" alt="Android图标"></div>
+                  <div class="icon-preview size-96"><img src="assets/img/iconsize.jpg" alt="Android图标"></div>
+                </div>
+              </div>
+              <div class="platform-preview">
+                <div class="platform-label">macOS/Windows</div>
+                <div class="platform-icons">
+                  <div class="icon-preview size-256"><img src="assets/img/iconsize.jpg" alt="macOS图标"></div>
+                  <div class="icon-preview size-128"><img src="assets/img/iconsize.jpg" alt="macOS图标"></div>
+                  <div class="icon-preview size-64"><img src="assets/img/iconsize.jpg" alt="macOS图标"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 使用流程 -->
+    <section id="how-it-works" class="how-it-works">
+      <div class="container">
+        <div class="section-title">
+          <h2 class="animate fadeIn">使用方法简单直观</h2>
+          <p class="section-subtitle animate fadeIn">只需几个简单步骤，即可完成所有平台图标的生成</p>
+        </div>
+        
+        <div class="steps">
+          <div class="step animate slideRight">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h3 class="step-title">准备源图像</h3>
+              <p class="step-description">选择一张高质量的正方形图像作为源图像，推荐尺寸为 1024×1024 像素或更高</p>
+            </div>
+          </div>
+          
+          <div class="step animate slideRight" style="animation-delay: 0.2s;">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h3 class="step-title">上传图像</h3>
+              <p class="step-description">通过拖放或文件选择器将源图像上传至 iconsize 应用或网页</p>
+            </div>
+          </div>
+          
+          <div class="step animate slideRight" style="animation-delay: 0.4s;">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h3 class="step-title">选择目标平台</h3>
+              <p class="step-description">从 iOS、Android、macOS、Windows、watchOS 等平台中选择需要生成图标的目标平台</p>
+            </div>
+          </div>
+          
+          <div class="step animate slideRight" style="animation-delay: 0.6s;">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <h3 class="step-title">生成图标</h3>
+              <p class="step-description">点击生成按钮，iconsize 将自动为所选平台创建所有所需尺寸的图标</p>
+            </div>
+          </div>
+          
+          <div class="step animate slideRight" style="animation-delay: 0.8s;">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <h3 class="step-title">下载与使用</h3>
+              <p class="step-description">下载生成的图标包，解压后即可将图标集成到您的应用项目中</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 下载区域 -->
+    <section id="download" class="download">
+      <div class="container">
+        <h2 class="animate fadeIn">下载 iconsize</h2>
+        <p class="animate fadeIn">选择适合您平台的版本，开始高效地创建应用图标</p>
+        
+        <div class="download-options">
+          <div class="download-option animate fadeIn">
+            <div class="download-icon">
+              <i class="fab fa-apple"></i>
+            </div>
+            <h3>macOS</h3>
+            <p>适用于 macOS 10.13 及更高版本</p>
+            <a href="https://gitee.com/luoyaosheng/iconsize/releases/tag/3.0.0" class="download-button" target="_blank">
+              <span>下载 DMG</span>
+              <i class="fas fa-download"></i>
+            </a>
+          </div>
+          
+          <div class="download-option animate fadeIn" style="animation-delay: 0.2s;">
+            <div class="download-icon">
+              <i class="fab fa-windows"></i>
+            </div>
+            <h3>Windows</h3>
+            <p>适用于 Windows 10 及更高版本</p>
+            <a href="https://gitee.com/luoyaosheng/iconsize/releases/tag/3.0.0" class="download-button" target="_blank">
+              <span>下载安装包</span>
+              <i class="fas fa-download"></i>
+            </a>
+          </div>
+          
+          <div class="download-option animate fadeIn" style="animation-delay: 0.4s;">
+            <div class="download-icon">
+              <i class="fab fa-linux"></i>
+            </div>
+            <h3>Linux</h3>
+            <p>适用于主流 Linux 发行版</p>
+            <a href="https://gitee.com/luoyaosheng/iconsize/releases/tag/3.0.0" class="download-button" target="_blank">
+              <span>下载 AppImage</span>
+              <i class="fas fa-download"></i>
+            </a>
+          </div>
+          
+          <div class="download-option animate fadeIn" style="animation-delay: 0.6s;">
+            <div class="download-icon">
+              <i class="fas fa-globe"></i>
+            </div>
+            <h3>网页版</h3>
+            <p>无需下载，直接在浏览器使用</p>
+            <a href="https://web.iconsize.i2kai.com/" class="download-button" target="_blank">
+              <span>立即使用</span>
+              <i class="fas fa-external-link-alt"></i>
+            </a>
+          </div>
+        </div>
+        
+        <div class="web-version-note animate fadeIn" style="animation-delay: 0.8s;">
+          <p>不想下载安装包？可以直接使用<a href="https://web.iconsize.i2kai.com/" target="_blank">网页版</a>，立即开始生成图标！</p>
+        </div>
+        
+        <div class="app-screenshots animate fadeIn" style="animation-delay: 1s;">
+          <img src="assets/img/screenshots/1.jpg" alt="iconsize 应用截图" class="app-screenshot">
+        </div>
+        
+        <div class="testimonials animate fadeIn" style="animation-delay: 1.2s;">
+          <div class="testimonial">
+            <div class="quote-icon"><i class="fas fa-quote-left"></i></div>
+            <p class="quote-text">iconsize极大地提高了我开发应用的效率，只需一次上传，就能生成所有平台的图标。太棒了！</p>
+            <div class="quote-author">- 移动应用开发者</div>
+          </div>
+          
+          <div class="testimonial">
+            <div class="quote-icon"><i class="fas fa-quote-left"></i></div>
+            <p class="quote-text">作为一名UI设计师，我推荐每个应用开发团队都使用iconsize，它确保了图标在各平台的一致性。</p>
+            <div class="quote-author">- UI设计师</div>
+          </div>
+          
+          <div class="testimonial">
+            <div class="quote-icon"><i class="fas fa-quote-left"></i></div>
+            <p class="quote-text">这是目前我使用过的最好的图标生成工具，界面简洁，功能强大，非常推荐！</p>
+            <div class="quote-author">- 独立开发者</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- FAQ 区域 -->
+    <section id="faq" class="faq">
+      <div class="container">
+        <div class="section-title">
+          <h2 class="animate fadeIn">常见问题</h2>
+          <p class="section-subtitle animate fadeIn">关于 iconsize 的常见问题解答</p>
+        </div>
+        
+        <div class="faq-list">
+          <div class="faq-item animate fadeIn">
+            <div class="faq-question">推荐使用什么格式和尺寸的源图像？</div>
+            <div class="faq-answer">
+              <p>我们推荐使用 PNG 格式的图像作为源图像，尺寸最好为 1024×1024 像素或更高（例如 2048×2048）。源图像应该是正方形的，具有透明背景，以确保生成的图标在各种背景下都能良好显示。</p>
+            </div>
+          </div>
+          
+          <div class="faq-item animate fadeIn" style="animation-delay: 0.1s;">
+            <div class="faq-question">iconsize 支持哪些平台的图标生成？</div>
+            <div class="faq-answer">
+              <p>iconsize 支持多个主流平台的图标生成，包括：iOS（应用图标、App Store 图标）、Android（应用图标、自适应图标）、macOS（应用图标、文档图标）、Windows（应用图标、磁贴图标）、watchOS（应用图标、通知图标）、网页图标（favicon、PWA 图标）等。</p>
+            </div>
+          </div>
+          
+          <div class="faq-item animate fadeIn" style="animation-delay: 0.2s;">
+            <div class="faq-question">如何将生成的图标集成到我的项目中？</div>
+            <div class="faq-answer">
+              <p>iconsize 生成的图标按平台和尺寸组织成文件夹结构。您只需将相应平台的图标文件复制到项目中的正确位置即可。例如，对于 iOS 应用，将生成的图标添加到 Assets.xcassets 的 AppIcon 集合中；对于 Android 应用，将图标放置在相应的 mipmap 文件夹中。每个平台的集成说明会在下载的图标包中提供。</p>
+            </div>
+          </div>
+          
+          <div class="faq-item animate fadeIn" style="animation-delay: 0.3s;">
+            <div class="faq-question">iconsize 是否支持批量处理多个图标？</div>
+            <div class="faq-answer">
+              <p>目前桌面应用每次只能处理一个图标。我们计划在未来版本中添加批量处理功能，敬请期待。</p>
+            </div>
+          </div>
+          
+          <div class="faq-item animate fadeIn" style="animation-delay: 0.4s;">
+            <div class="faq-question">使用 iconsize 是否需要联网？</div>
+            <div class="faq-answer">
+              <p>不需要。iconsize 的桌面应用是本地运行的，不需要互联网连接。所有图像处理都在您的设备上完成，不会上传到任何服务器，保证了您的图像资源安全。</p>
+            </div>
+          </div>
+          
+          <div class="faq-item animate fadeIn" style="animation-delay: 0.5s;">
+            <div class="faq-question">iconsize 是免费使用的吗？</div>
+            <div class="faq-answer">
+              <p>是的，iconsize 是一个开源项目，基于 Apache 2.0 许可证发布。您可以免费使用 iconsize 的所有功能，无论是个人项目还是商业项目。如果您喜欢这个工具，可以考虑在 Gitee 上给我们一个星标，或者贡献代码帮助改进项目。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 联系我们 -->
+    <section id="contact" class="contact">
+      <div class="container">
+        <div class="section-title">
+          <h2 class="animate fadeIn">联系我们</h2>
+          <p class="section-subtitle animate fadeIn">有问题或建议？请随时联系我们</p>
+        </div>
+        
+        <div class="contact-container">
+          <div class="contact-info animate fadeIn">
+            <div class="contact-method">
+              <div class="contact-icon">
+                <i class="fas fa-envelope"></i>
+              </div>
+              <div class="contact-text">
+                <h3>电子邮件</h3>
+                <p>support@iconsize.com</p>
+              </div>
+            </div>
+            
+            <div class="contact-method">
+              <div class="contact-icon">
+                <i class="fab fa-git-alt"></i>
+              </div>
+              <div class="contact-text">
+                <h3>Gitee Issues</h3>
+                <p>gitee.com/luoyaosheng/iconsize/issues</p>
+              </div>
+            </div>
+            
+            <div class="contact-method">
+              <div class="contact-icon">
+                <i class="fab fa-twitter"></i>
+              </div>
+              <div class="contact-text">
+                <h3>Twitter</h3>
+                <p>@iconsizeapp</p>
+              </div>
+            </div>
+            
+            <div class="contact-method">
+              <div class="contact-icon">
+                <i class="fas fa-comments"></i>
+              </div>
+              <div class="contact-text">
+                <h3>社区讨论</h3>
+                <p>discussions.iconsize.com</p>
+              </div>
+            </div>
+            
+            <div class="contact-method">
+              <div class="contact-icon">
+                <i class="fab fa-weixin"></i>
+              </div>
+              <div class="contact-text">
+                <h3>微信公众号</h3>
+                <p>极客第一行</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="contact-form animate fadeIn">
+            <form id="contactForm">
+              <div class="form-group">
+                <label for="name" class="form-label">您的姓名</label>
+                <input type="text" id="name" name="name" class="form-control" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="email" class="form-label">电子邮箱</label>
+                <input type="email" id="email" name="email" class="form-control" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="subject" class="form-label">主题</label>
+                <input type="text" id="subject" name="subject" class="form-control" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="message" class="form-label">消息内容</label>
+                <textarea id="message" name="message" class="form-control" rows="5" required></textarea>
+              </div>
+              
+              <button type="submit" class="btn-send">发送消息</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <!-- 页脚 -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-container">
+        <div class="footer-about">
+          <div class="footer-logo">
+            <img src="assets/img/iconsize.jpg" alt="iconsize logo">
+            <span>iconsize</span>
+          </div>
+          <p>iconsize 是一款高效的多平台图标生成工具，帮助开发者快速创建各种尺寸的应用图标，支持 iOS、Android、macOS、Windows 等多个平台。</p>
+          <div class="footer-social">
+            <a href="https://gitee.com/luoyaosheng/iconsize" class="social-icon" target="_blank"><i class="fab fa-git-alt"></i></a>
+            <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-icon"><i class="fab fa-linkedin"></i></a>
+            <a href="#" class="social-icon"><i class="fab fa-weibo"></i></a>
+          </div>
+        </div>
+        
+        <div class="footer-nav">
+          <h3>导航</h3>
+          <ul>
+            <li><a href="#features">特性</a></li>
+            <li><a href="#how-it-works">使用方法</a></li>
+            <li><a href="#download">下载</a></li>
+            <li><a href="#faq">常见问题</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-contact">
+          <h3>联系我们</h3>
+          <ul>
+            <li><a href="mailto:support@iconsize.com">电子邮件</a></li>
+            <li><a href="https://gitee.com/luoyaosheng/iconsize" target="_blank">Gitee</a></li>
+            <li><a href="#">Twitter</a></li>
+            <li><a href="#">社区讨论</a></li>
+            <li><a href="https://i2kai.com" target="_blank">公众号：极客第一行</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-legal">
+          <h3>法律信息</h3>
+          <ul>
+            <li><a href="#">隐私政策</a></li>
+            <li><a href="#">使用条款</a></li>
+            <li><a href="#">许可协议</a></li>
+            <li><a href="#">贡献指南</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2023 iconsize. 保留所有权利。</p>
+        <p class="developer-info">开发者：<a href="https://i2kai.com" target="_blank">罗耀生</a> | 官网：<a href="https://i2kai.com" target="_blank">i2kai.com</a> | 公众号：极客第一行</p>
+      </div>
+    </div>
+  </footer>
+  
+  <!-- 脚本 -->
+  <script src="assets/js/main.js"></script>
+</body>
+</html> 
