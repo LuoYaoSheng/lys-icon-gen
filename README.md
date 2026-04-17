@@ -1,4 +1,10 @@
-# 图标生成器
+# Icon Gen
+
+> lys Open Source 体系中的多平台图标生成工具
+
+- 项目站：<https://icon.open.i2kai.com>
+- Gitee：<https://gitee.com/luoyaosheng/lys-icon-gen>
+- GitHub：<https://github.com/LuoYaoSheng/lys-icon-gen>
 
 快速生成多平台所需的各种尺寸图标，支持iOS、Android、MacOS和Windows平台。
 
