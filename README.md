@@ -3,6 +3,7 @@
 > lys Open Source 体系中的多平台图标生成工具
 
 - 项目站：<https://icon.open.i2kai.com>
+- 在线工具：<https://icon.open.i2kai.com/tool/>
 - Gitee：<https://gitee.com/luoyaosheng/lys-icon-gen>
 - GitHub：<https://github.com/LuoYaoSheng/lys-icon-gen>
 
