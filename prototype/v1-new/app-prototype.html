@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IconGen V1 新版原型 — 单文件评审版（P6）</title>
+<!--
+  IconGen V1 新版原型（P6）
+  · 输入：docs/02_product/PRD.md + docs/06_review/PRODUCT_REVIEW.md（B 类优化 11 项落地 / C 类 5 组留档）+ docs/07_design_system/（tokens/components/patterns/assets/guidelines）
+  · 铁律：32 项功能不丢失（F001-F027 全保留；F028/F029 按 B 类修复规格落地；F030/F031 C 类留档不实现；F032 桌面版以差异说明卡覆盖）
+  · 零外链：所有外部链接拦截并提示旧目标；JSZip 用模拟打包层；字体系统栈；图片占位
+  · CSS 变量全部来自 docs/07_design_system/TOKEN.md（V1 统一基线）
+-->
+<style>
+/* ============================================================
+   Design Tokens — 全部来源 docs/07_design_system/TOKEN.md（V1 统一基线，
+   以 web/public/css/style.css:2-19 为主产品基线，PG-04 统一决策）
+   ============================================================ */
+:root {
+  /* Color（TOKEN.md §1.1） */
+  --color-primary: #4a7bff;
+  --color-primary-light: #6691ff;
+  --color-primary-dark: #3a6be9;
+  --color-primary-alpha-05: rgba(74, 123, 255, 0.05);
+  --color-primary-alpha-10: rgba(74, 123, 255, 0.1);
+  --color-secondary: #f8f9fa;
+  --color-success: #28a745;
+  --color-success-dark: #218838;
+  --color-danger: #dc3545;
+  --color-warning: #ffc107;
+  --color-info: #17a2b8;
+  --color-dark: #343a40;
+  --color-text: #333333;
+  --color-gray: #6c757d;
+  --color-border: #dee2e6;
+  --color-bg: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-chip: #4285f4;
+  /* V1 补充色（TOKEN.md §1.2） */
+  --color-warning-surface: #fff7e0;
+  --color-warning-border: #e0b94f;
+  --color-warning-text: #7a5b12;
+  --color-success-surface: rgba(40, 167, 69, 0.1);
+  --color-success-deep: #1c743a;
+  --color-placeholder-2: #7a5cff;
+  /* Typography（TOKEN.md §2） */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-family-code: 'SF Mono', Menlo, Consolas, monospace;
+  --font-size-base: 16px;
+  --font-size-h1: 2.5rem;
+  --font-size-h2: 1.3rem;
+  --font-size-h3: 1.1rem;
+  --font-size-lead: 1.1rem;
+  --font-size-sm: 0.9rem;
+  --font-size-xs: 0.8rem;
+  --line-height-base: 1.5;
+  /* Spacing（TOKEN.md §3） */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --gap-grid: 16px;
+  --gap-grid-lg: 24px;
+  --container-max: 1200px;
+  --container-pad: 20px;
+  /* Radius（TOKEN.md §4） */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+  /* Shadow / Motion / Z（TOKEN.md §5） */
+  --shadow-card: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-notify: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-icon: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --speed-base: 0.3s ease;
+  --z-notify: 9999;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--color-text);
+  background: #e9edf3;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   评审面板（工具层，非产品 UI）
+   ============================================================ */
+.review-panel {
+  position: sticky; top: 0; z-index: 1000;
+  background: #1c2433; color: #dce5f2;
+  padding: 10px var(--space-3);
+  font-size: 13px;
+}
+.review-panel .rp-row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.review-panel .rp-title { font-weight: 700; color: #fff; margin-right: var(--space-2); }
+.rp-group { display: inline-flex; gap: 4px; background: #273245; border-radius: var(--radius-md); padding: 3px; }
+.rp-btn {
+  border: none; background: transparent; color: #c3cfdf; padding: 5px 10px;
+  border-radius: var(--radius-sm); cursor: pointer; font-size: 12.5px; font-family: inherit;
+}
+.rp-btn:hover { background: #33415a; color: #fff; }
+.rp-btn.active { background: var(--color-primary); color: #fff; }
+.rp-readout { margin-left: auto; font-size: 12px; color: #93a3b8; }
+.rp-readout b { color: #fff; font-weight: 600; }
+.rp-meta { margin-top: 6px; color: #8fa0b5; font-size: 12px; }
+
+/* 浏览器窗口画框 */
+.browser {
+  max-width: 1280px; margin: var(--space-4) auto var(--space-6);
+  background: var(--color-surface); border-radius: var(--radius-lg);
+  box-shadow: 0 18px 45px rgba(22, 32, 51, 0.18); overflow: hidden;
+}
+.browser-chrome { display: flex; align-items: center; gap: var(--space-2); padding: 10px var(--space-3); background: #eef1f6; border-bottom: 1px solid var(--color-border); }
+.browser-dots { display: flex; gap: 6px; }
+.browser-dots span { width: 10px; height: 10px; border-radius: var(--radius-full); background: #c9d2de; }
+.browser-dots span:first-child { background: #ff5f57; }
+.browser-dots span:nth-child(2) { background: #febc2e; }
+.browser-dots span:nth-child(3) { background: #28c840; }
+.browser-address {
+  flex: 1; background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-full); padding: 4px 14px; font-size: 12.5px; color: var(--color-gray);
+  font-family: var(--font-family-code); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.browser-viewport { height: 660px; overflow-y: auto; position: relative; background: var(--color-bg); }
+.browser-viewport::-webkit-scrollbar { width: 8px; }
+.browser-viewport::-webkit-scrollbar-thumb { background: #c4cdd9; border-radius: 4px; }
+
+/* 页面徽标（每页标注 页面编号+来源） */
+.page-badge {
+  position: sticky; top: 0; z-index: 50;
+  display: inline-block; margin: var(--space-2) 0 0 var(--space-2);
+  background: #1c2433; color: #ffd479; font-size: 11.5px; padding: 4px 10px;
+  border-radius: var(--radius-sm); font-family: var(--font-family-code);
+  box-shadow: var(--shadow-icon);
+}
+.page-badge .src { color: #9fd0ff; }
+.c-note { background: var(--color-warning-surface); border: 1px dashed var(--color-warning-border); color: var(--color-warning-text); font-size: 12px; padding: 8px 12px; border-radius: var(--radius-md); margin: var(--space-2) var(--space-3); }
+.b-note { background: var(--color-primary-alpha-10); border: 1px dashed var(--color-primary-light); color: var(--color-primary-dark); font-size: 12px; padding: 8px 12px; border-radius: var(--radius-md); margin: var(--space-2) var(--space-3); }
+
+.page { display: none; }
+.page.active { display: block; }
+
+/* ============================================================
+   通用基础组件（COMPONENT.md §2：Card / Button / 通知）
+   ============================================================ */
+.container { width: 100%; max-width: var(--container-max); margin: 0 auto; padding: var(--container-pad); }
+
+.btn {
+  display: inline-block; font-weight: 500; text-align: center; white-space: nowrap;
+  vertical-align: middle; user-select: none; border: 1px solid transparent;
+  padding: 0.5rem 1rem; font-size: 1rem; line-height: 1.5; border-radius: var(--radius-md);
+  transition: all var(--speed-base); cursor: pointer; font-family: inherit; text-decoration: none;
+}
+.btn-primary { color: #fff; background-color: var(--color-primary); border-color: var(--color-primary); }
+.btn-primary:hover, .btn-primary:focus { background-color: var(--color-primary-dark); border-color: var(--color-primary-dark); }
+.btn-secondary { color: #212529; background-color: var(--color-secondary); border-color: #dae0e5; }
+.btn-secondary:hover, .btn-secondary:focus { background-color: #e2e6ea; border-color: #dae0e5; }
+.btn-success { color: #fff; background-color: var(--color-success); border-color: var(--color-success); }
+.btn-success:hover, .btn-success:focus { background-color: var(--color-success-dark); }
+.btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.card { background-color: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); margin-bottom: var(--space-5); overflow: hidden; }
+.card-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--color-border); background-color: var(--color-secondary); display: flex; justify-content: space-between; align-items: center; }
+.card-header h2 { margin: 0; font-size: var(--font-size-h2); color: var(--color-dark); }
+.card-body { padding: 1.5rem; }
+
+/* 通知组件：V1 堆叠队列（B/FL-01，COMPONENT.md §1.5） */
+.notification-stack { position: fixed; bottom: 20px; right: 20px; z-index: var(--z-notify); display: flex; flex-direction: column; gap: var(--space-2); max-width: 400px; }
+.notification-item {
+  padding: 12px 20px; color: #fff; border-radius: var(--radius-md);
+  box-shadow: var(--shadow-notify); font-size: 14px;
+  transform: translateY(16px); opacity: 0; transition: all var(--speed-base);
+  display: flex; align-items: center; gap: var(--space-2);
+}
+.notification-item.show { transform: translateY(0); opacity: 1; }
+.notification-item.n-info { background-color: var(--color-info); }
+.notification-item.n-success { background-color: var(--color-success); }
+.notification-item.n-error { background-color: var(--color-danger); }
+.notification-item.n-warning { background-color: var(--color-warning); color: #333; }
+.notification-item .n-dot { width: 8px; height: 8px; border-radius: var(--radius-full); background: rgba(255,255,255,.75); flex: none; }
+.notification-item.n-warning .n-dot { background: rgba(51,51,51,.5); }
+.notification-item .n-tag { font-size: 11px; opacity: .85; border: 1px solid rgba(255,255,255,.5); padding: 0 6px; border-radius: var(--radius-full); }
+
+/* ============================================================
+   PAGE002 工具页组件（DS COMPONENT.md §1）
+   ============================================================ */
+#page002 .tool-header { text-align: center; padding: 1.6rem 0 1.2rem; position: relative; }
+#page002 .tool-header h1 { font-size: 2.2rem; color: var(--color-dark); margin-bottom: 0.4rem; }
+#page002 .tool-header p { font-size: var(--font-size-lead); color: var(--color-gray); }
+#page002 .back-home {
+  position: absolute; left: 0; top: 1.7rem;
+  font-size: 13px; color: var(--color-gray); text-decoration: none;
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  padding: 6px 12px; border-radius: var(--radius-md); transition: all var(--speed-base);
+}
+#page002 .back-home:hover { color: var(--color-primary); border-color: var(--color-primary); background: var(--color-primary-alpha-05); }
+
+/* DropZone（COMPONENT.md §1.1；B/PG-02 整区可点击） */
+.drop-zone {
+  border: 2px dashed var(--color-border); border-radius: var(--radius-md);
+  padding: 2.5rem 1.5rem; text-align: center; transition: all var(--speed-base);
+  background-color: var(--color-secondary); min-height: 300px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+.drop-zone.empty { cursor: pointer; } /* B/PG-02：空态整区可点击 */
+.drop-zone:hover, .drop-zone.drag-active { border-color: var(--color-primary); background-color: var(--color-primary-alpha-05); }
+.drop-zone.loaded { cursor: default; background: var(--color-surface); }
+.upload-content, .preview-content { width: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; }
+.upload-content.visible, .preview-content.visible { display: flex; }
+.drop-icon { margin-bottom: 1rem; }
+.drop-icon svg { fill: var(--color-primary); }
+.drop-zone p { margin-bottom: 1rem; color: var(--color-dark); }
+.drop-zone .hint { color: var(--color-gray); font-size: var(--font-size-sm); margin-bottom: 1.5rem; }
+.preview-figure { width: 180px; height: 180px; border-radius: var(--radius-md); box-shadow: var(--shadow-card); margin-bottom: 1.2rem; display: grid; place-items: center; font-size: 12px; color: #5b7a9a; }
+.file-info { text-align: center; color: var(--color-gray); font-size: var(--font-size-sm); margin-bottom: 1.5rem; }
+.preview-actions { display: flex; justify-content: center; gap: 1rem; }
+
+/* 模拟文件库（评审通道，非产品 UI） */
+.mock-lib { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px dashed var(--color-border); }
+.mock-lib .mk-title { font-size: 12px; color: var(--color-gray); margin-bottom: var(--space-2); }
+.mock-lib .mk-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.mock-btn { font-size: 12px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-dark); padding: 4px 10px; border-radius: var(--radius-sm); cursor: pointer; font-family: inherit; }
+.mock-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* PlatformCard（COMPONENT.md §1.2；B/PG-05 图标+徽标） */
+.settings-group { margin-bottom: 2rem; }
+.settings-group h3 { margin-bottom: 1rem; font-size: var(--font-size-h3); color: var(--color-dark); }
+.platforms-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--gap-grid); }
+.platform-card {
+  padding: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  cursor: pointer; transition: all var(--speed-base); display: flex; flex-direction: column; gap: 6px;
+}
+.platform-card:hover { border-color: var(--color-primary); background-color: var(--color-primary-alpha-05); }
+.platform-card.selected { border-color: var(--color-primary); background-color: var(--color-primary-alpha-10); }
+.platform-card .pc-top { display: flex; align-items: center; gap: var(--space-2); }
+.platform-card .pc-top svg { width: 20px; height: 20px; fill: var(--color-gray); flex: none; }
+.platform-card.selected .pc-top svg { fill: var(--color-primary); }
+.platform-card .pc-name { font-weight: 500; color: var(--color-dark); }
+.platform-card .pc-badge {
+  align-self: flex-start; font-size: 11px; color: var(--color-gray);
+  background: var(--color-secondary); border: 1px solid var(--color-border);
+  border-radius: var(--radius-full); padding: 1px 8px;
+}
+.platform-card.selected .pc-badge { color: var(--color-primary); border-color: var(--color-primary-light); background: var(--color-surface); }
+
+/* 尺寸模板表（COMPONENT.md §1.3；V1 新增 UI，数据源 iconSizes.js） */
+.template-fold { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-top: 1rem; overflow: hidden; }
+.template-fold .tf-head {
+  width: 100%; text-align: left; background: var(--color-surface); border: none; cursor: pointer;
+  padding: 10px 14px; font-size: 13px; color: var(--color-gray); font-family: inherit;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.template-fold .tf-head:hover { color: var(--color-primary); }
+.template-fold .tf-body { display: none; border-top: 1px solid var(--color-border); max-height: 260px; overflow: auto; }
+.template-fold.open .tf-body { display: block; }
+.template-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.template-table th, .template-table td { padding: 6px 10px; border-bottom: 1px solid var(--color-border); text-align: left; white-space: nowrap; }
+.template-table th { color: var(--color-gray); font-weight: 600; background: var(--color-secondary); position: sticky; top: 0; }
+.template-table td code { font-family: var(--font-family-code); font-size: 11px; color: var(--color-primary-dark); }
+
+/* OptionSwitch（COMPONENT.md §1.4；B/PG-06 前缀说明） */
+.options-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+.option-item { display: flex; align-items: flex-start; }
+.option-item input[type="checkbox"] { margin-right: 0.5rem; cursor: pointer; margin-top: 3px; }
+.option-item label { cursor: pointer; color: var(--color-dark); }
+.option-item .opt-cond { display: block; font-size: 11.5px; color: var(--color-gray); margin-top: 2px; }
+.option-item input:disabled { cursor: not-allowed; }
+
+/* 按钮容器 */
+.button-container { display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
+
+/* 结果区四件套（COMPONENT.md §1.4/PG-01：Tab+网格+计数+ZIP 树） */
+.result-summary { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: 1.2rem; font-size: 13px; color: var(--color-gray); }
+.result-summary .rs-chip { background: var(--color-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-full); padding: 3px 12px; }
+.result-summary .rs-chip b { color: var(--color-primary-dark); }
+.stale-banner {
+  display: none; background: #fff7e0; border: 1px solid #e0b94f; color: #7a5b12;
+  border-radius: var(--radius-md); padding: 8px 14px; font-size: 13px; margin-bottom: 1.2rem;
+}
+.stale-banner.show { display: block; }
+.result-tabs { display: flex; overflow-x: auto; margin-bottom: 1.5rem; padding-bottom: 0.5rem; gap: 0.5rem; }
+.result-tab {
+  padding: 0.5rem 1rem; background-color: var(--color-secondary); border: none; cursor: pointer;
+  border-radius: var(--radius-md); transition: all var(--speed-base); white-space: nowrap; font-family: inherit; font-size: 13.5px; color: var(--color-dark);
+}
+.result-tab:hover { background-color: var(--color-primary-alpha-10); }
+.result-tab.active { background-color: var(--color-primary); color: #fff; }
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--gap-grid-lg); }
+.icon-item { display: flex; flex-direction: column; align-items: center; transition: all var(--speed-base); cursor: default; }
+.icon-item:hover { transform: translateY(-5px); }
+.icon-item .ii-thumb {
+  width: 80px; height: 80px; border-radius: var(--radius-md); margin-bottom: 0.5rem;
+  box-shadow: var(--shadow-icon); display: grid; place-items: center;
+  font-size: 11px; color: rgba(255,255,255,.85); font-family: var(--font-family-code);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-placeholder-2));
+}
+.icon-item .icon-name { font-size: var(--font-size-xs); color: var(--color-dark); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.icon-item .icon-size { font-size: 0.75rem; color: var(--color-gray); }
+.download-section { margin-top: 2rem; text-align: center; }
+.download-section .btn-success { font-size: 18px; padding: 12px 24px; }
+.zip-fold { margin-top: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; text-align: left; }
+.zip-fold .zf-head { width: 100%; background: var(--color-secondary); border: none; cursor: pointer; padding: 10px 14px; font-size: 13px; color: var(--color-gray); font-family: inherit; text-align: left; }
+.zip-fold .zf-head:hover { color: var(--color-primary); }
+.zip-fold .zf-body { display: none; max-height: 300px; overflow: auto; padding: 12px 16px; }
+.zip-fold.open .zf-body { display: block; }
+.zip-tree { font-family: var(--font-family-code); font-size: 12px; line-height: 1.8; color: var(--color-dark); white-space: pre; }
+.zip-tree .dir { color: var(--color-primary-dark); font-weight: 600; }
+.zip-tree .res { color: var(--color-success-deep); }
+
+#page002 footer { text-align: center; padding: 1.5rem 0; margin-top: 2rem; color: var(--color-gray); font-size: var(--font-size-sm); }
+
+/* ============================================================
+   PAGE001 主页（PRD §6 PAGE001；DS 统一 token，B/PG-04）
+   ============================================================ */
+#page001 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 0; border-bottom: 1px solid var(--color-border); }
+#page001 .brand { display: inline-flex; align-items: center; gap: 12px; font-weight: 800; color: var(--color-dark); text-decoration: none; }
+#page001 .brand-mark { display: inline-grid; width: 36px; height: 36px; place-items: center; border-radius: var(--radius-md); background: var(--color-dark); color: #fff; font-size: 14px; }
+#page001 .nav { display: flex; flex-wrap: wrap; gap: 14px; color: var(--color-gray); font-size: 14px; font-weight: 600; }
+#page001 .nav a { color: inherit; text-decoration: none; cursor: pointer; }
+#page001 .nav a:hover { color: var(--color-primary); }
+#page001 .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr); gap: 44px; align-items: center; padding: 56px 0 48px; }
+#page001 .eyebrow { display: inline-flex; padding: 6px 10px; border-radius: var(--radius-md); background: var(--color-primary-alpha-10); color: var(--color-primary); font-weight: 800; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+#page001 h1 { margin: 18px 0 0; max-width: 720px; font-size: clamp(38px, 6vw, 64px); line-height: 1.02; letter-spacing: -0.03em; color: var(--color-dark); }
+#page001 .lead { max-width: 620px; margin: 24px 0 0; color: var(--color-gray); font-size: 18px; line-height: 1.7; }
+#page001 .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+#page001 .button-primary, #page001 .button-secondary {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px;
+  border-radius: var(--radius-md); font-weight: 700; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease; font-size: 15px;
+}
+#page001 .button-primary { background: var(--color-primary); color: #fff; box-shadow: 0 12px 26px rgba(74, 123, 255, 0.2); }
+#page001 .button-secondary { border: 1px solid var(--color-border); background: #fff; color: var(--color-dark); }
+#page001 .button-primary:hover, #page001 .button-secondary:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); }
+#page001 .preview { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-card); overflow: hidden; }
+#page001 .preview-head { display: flex; gap: 6px; padding: 12px; background: var(--color-secondary); border-bottom: 1px solid var(--color-border); }
+#page001 .dot { width: 10px; height: 10px; border-radius: var(--radius-full); background: var(--color-border); }
+#page001 .preview-body { padding: 24px; }
+#page001 .icon-grid-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+#page001 .icon-tile { aspect-ratio: 1; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--color-primary-alpha-10); border: 1px solid #c3d6ff; color: var(--color-primary); font-weight: 800; }
+#page001 .section { padding: 44px 0; border-top: 1px solid var(--color-border); }
+#page001 .section h2 { margin: 0; font-size: clamp(26px, 4vw, 36px); letter-spacing: -0.02em; color: var(--color-dark); }
+#page001 .section-intro { max-width: 720px; color: var(--color-gray); margin: 12px 0 0; line-height: 1.7; }
+#page001 .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
+#page001 .feature-card { min-height: 170px; padding: 20px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+#page001 .feature-card strong { display: block; font-size: 18px; margin-bottom: 8px; color: var(--color-dark); }
+#page001 .feature-card p { margin: 0; color: var(--color-gray); line-height: 1.7; }
+#page001 code { padding: 2px 6px; border-radius: 6px; background: var(--color-secondary); color: var(--color-dark); font-family: var(--font-family-code); font-size: 13px; }
+#page001 .meta-table { width: 100%; margin-top: 22px; border-collapse: collapse; border: 1px solid var(--color-border); background: #fff; }
+#page001 .meta-table th, #page001 .meta-table td { padding: 14px 16px; border-bottom: 1px solid var(--color-border); text-align: left; vertical-align: top; }
+#page001 .meta-table th { width: 160px; color: var(--color-gray); background: var(--color-secondary); font-weight: 700; }
+#page001 .meta-table a { color: var(--color-primary-dark); }
+#page001 .footer { padding: 34px 0 48px; color: var(--color-gray); border-top: 1px solid var(--color-border); font-size: 14px; }
+@media (max-width: 860px) {
+  #page001 .hero, #page001 .grid3 { grid-template-columns: 1fr; }
+  #page001 .topbar { align-items: flex-start; flex-direction: column; }
+}
+
+/* ============================================================
+   PAGE003 落地页（PRD §6 PAGE003；B/FN-03/04/10 修复规格落地）
+   ============================================================ */
+#page003 .lp-container { max-width: 1120px; margin: 0 auto; padding: 0 var(--space-3); }
+#page003 .lp-header {
+  position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,.92);
+  transition: all var(--speed-base); border-bottom: 1px solid transparent;
+}
+#page003 .lp-header.scrolled { background: #fff; border-bottom-color: var(--color-border); box-shadow: var(--shadow-icon); }
+#page003 .lp-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+#page003 .lp-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; color: var(--color-dark); }
+#page003 .lp-logo .logo-ph { width: 34px; height: 34px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--color-primary), var(--color-placeholder-2)); /* 旧品牌渐变按 DS 统一映射 */ display: grid; place-items: center; color: #fff; font-size: 12px; }
+#page003 .lp-menu { display: flex; gap: 22px; font-size: 14.5px; }
+#page003 .lp-menu a { color: var(--color-gray); text-decoration: none; cursor: pointer; }
+#page003 .lp-menu a:hover { color: var(--color-primary); }
+#page003 .mobile-menu-toggle { display: none; background: none; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 18px; padding: 6px 12px; cursor: pointer; }
+#page003 .lp-hero { padding: 72px 0 56px; text-align: center; }
+#page003 .lp-hero h1 { font-size: clamp(32px, 5vw, 48px); color: var(--color-dark); letter-spacing: -0.02em; }
+#page003 .lp-hero p { color: var(--color-gray); max-width: 640px; margin: 16px auto 0; line-height: 1.7; }
+#page003 .lp-hero-actions { display: flex; gap: 12px; justify-content: center; margin-top: 28px; }
+#page003 .platform-icons { display: flex; gap: 18px; justify-content: center; margin-top: 32px; color: var(--color-gray); }
+#page003 .platform-icons svg { width: 28px; height: 28px; fill: currentColor; }
+#page003 .demo-ph { margin: 40px auto 0; max-width: 560px; height: 240px; border-radius: var(--radius-xl); border: 1px dashed var(--color-border); display: grid; place-items: center; color: var(--color-gray); font-size: 13px; background: var(--color-secondary); }
+#page003 .lp-section { padding: 56px 0; border-top: 1px solid var(--color-border); }
+#page003 .lp-section h2 { font-size: 28px; color: var(--color-dark); text-align: center; }
+#page003 .lp-section .sub { text-align: center; color: var(--color-gray); margin: 10px 0 0; }
+#page003 .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-top: 32px; }
+#page003 .feature-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 22px; }
+#page003 .feature-card strong { display: block; font-size: 16.5px; margin-bottom: 8px; color: var(--color-dark); }
+#page003 .feature-card p { color: var(--color-gray); font-size: 14px; line-height: 1.7; }
+#page003 .showcase { display: flex; gap: var(--space-4); justify-content: center; align-items: flex-start; margin-top: 32px; flex-wrap: wrap; }
+#page003 .showcase .sc-col { text-align: center; }
+#page003 .showcase .sc-title { font-size: 13px; color: var(--color-gray); margin-bottom: 10px; }
+#page003 .sc-sizes { display: flex; gap: 10px; align-items: flex-end; justify-content: center; }
+#page003 .sc-thumb { border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--color-primary), var(--color-placeholder-2)); display: grid; place-items: center; color: rgba(255,255,255,.8); font-size: 10px; font-family: var(--font-family-code); }
+#page003 .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-3); margin-top: 32px; }
+#page003 .step { text-align: center; }
+#page003 .step-number { width: 34px; height: 34px; margin: 0 auto 10px; border-radius: var(--radius-full); background: var(--color-primary); color: #fff; display: grid; place-items: center; font-weight: 700; }
+#page003 .step h3 { font-size: 15px; color: var(--color-dark); margin-bottom: 6px; }
+#page003 .step p { font-size: 12.5px; color: var(--color-gray); line-height: 1.6; }
+#page003 .download-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-top: 32px; }
+#page003 .download-card { border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 22px; text-align: center; background: var(--color-surface); position: relative; }
+#page003 .download-card svg { width: 30px; height: 30px; fill: var(--color-gray); margin-bottom: 10px; }
+#page003 .download-card h3 { font-size: 16px; color: var(--color-dark); margin-bottom: 6px; }
+#page003 .download-card p { font-size: 12.5px; color: var(--color-gray); margin-bottom: 14px; }
+#page003 .testimonials { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-top: 32px; }
+#page003 .testimonial { background: var(--color-secondary); border-radius: var(--radius-lg); padding: 20px; font-size: 13.5px; color: var(--color-dark); }
+#page003 .testimonial .quote-author { margin-top: 10px; color: var(--color-gray); font-size: 12.5px; }
+#page003 .faq-list { max-width: 760px; margin: 32px auto 0; }
+#page003 .faq-item { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 10px; overflow: hidden; background: var(--color-surface); }
+#page003 .faq-question { width: 100%; text-align: left; background: none; border: none; padding: 14px 18px; font-size: 14.5px; font-weight: 600; color: var(--color-dark); cursor: pointer; font-family: inherit; display: flex; justify-content: space-between; align-items: center; }
+#page003 .faq-question:hover { color: var(--color-primary); }
+#page003 .faq-answer { display: none; padding: 0 18px 14px; color: var(--color-gray); font-size: 13.5px; line-height: 1.7; }
+#page003 .faq-item.active .faq-answer { display: block; }
+#page003 .faq-item.active .faq-question::after { content: '−'; }
+#page003 .faq-question::after { content: '+'; color: var(--color-gray); }
+#page003 .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-top: 32px; align-items: start; }
+#page003 .contact-list { list-style: none; }
+#page003 .contact-list li { padding: 10px 0; border-bottom: 1px dashed var(--color-border); font-size: 14px; color: var(--color-dark); }
+#page003 .contact-list li:last-child { border-bottom: none; }
+#page003 .contact-form { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 24px; }
+#page003 .form-field { margin-bottom: 14px; }
+#page003 .form-field label { display: block; font-size: 13px; color: var(--color-dark); margin-bottom: 5px; font-weight: 600; }
+#page003 .form-field input, #page003 .form-field textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  font-family: inherit; font-size: 14px; transition: border-color var(--speed-base);
+}
+#page003 .form-field input:focus, #page003 .form-field textarea:focus { outline: none; border-color: var(--color-primary); }
+#page003 .form-field .field-error { display: none; color: var(--color-danger); font-size: 12px; margin-top: 4px; }
+#page003 .form-field.error input, #page003 .form-field.error textarea { border-color: var(--color-danger); background: rgba(220, 53, 69, .04); }
+#page003 .form-field.error .field-error { display: block; }
+#page003 .form-success { display: none; background: var(--color-success-surface); border: 1px solid var(--color-success); color: var(--color-success-deep); border-radius: var(--radius-md); padding: 10px 14px; font-size: 13.5px; margin-bottom: 14px; }
+#page003 .form-success.show { display: block; }
+#page003 .lp-footer { border-top: 1px solid var(--color-border); padding: 40px 0 48px; margin-top: 56px; background: var(--color-surface); }
+#page003 .footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); font-size: 13.5px; }
+#page003 .footer-grid h4 { font-size: 14px; color: var(--color-dark); margin-bottom: 12px; }
+#page003 .footer-grid ul { list-style: none; }
+#page003 .footer-grid li { margin-bottom: 8px; color: var(--color-gray); }
+#page003 .footer-grid a { color: var(--color-gray); text-decoration: none; cursor: pointer; }
+#page003 .dead-link { color: #adb6c2; text-decoration: line-through; cursor: not-allowed; }
+#page003 .copyright { text-align: center; color: var(--color-gray); font-size: 12.5px; margin-top: 32px; }
+@media (max-width: 900px) {
+  #page003 .features-grid, #page003 .download-options, #page003 .testimonials, #page003 .footer-grid { grid-template-columns: 1fr 1fr; }
+  #page003 .steps { grid-template-columns: 1fr 1fr 1fr; }
+  #page003 .contact-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  #page003 .mobile-menu-toggle { display: block; }
+  #page003 .lp-menu {
+    display: none; position: absolute; top: 100%; left: 0; right: 0;
+    background: #fff; border-bottom: 1px solid var(--color-border);
+    flex-direction: column; padding: 12px var(--space-3); gap: 10px;
+  }
+  #page003 .lp-menu.open { display: flex; }
+}
+
+/* ============================================================
+   弹层（评审工具 + ZIP 清单）
+   ============================================================ */
+.modal-mask { display: none; position: fixed; inset: 0; background: rgba(22,32,51,.45); z-index: 9000; align-items: center; justify-content: center; padding: 24px; }
+.modal-mask.open { display: flex; }
+.modal {
+  background: var(--color-surface); border-radius: var(--radius-lg); max-width: 720px; width: 100%;
+  max-height: 78vh; overflow: auto; box-shadow: 0 24px 60px rgba(0,0,0,.25);
+}
+.modal-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--color-border); background: var(--color-secondary); position: sticky; top: 0; }
+.modal-head h3 { font-size: 15px; color: var(--color-dark); }
+.modal-close { border: none; background: none; font-size: 18px; cursor: pointer; color: var(--color-gray); }
+.modal-body { padding: 20px; font-size: 13.5px; color: var(--color-text); }
+.modal-body table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.modal-body th, .modal-body td { padding: 6px 8px; border-bottom: 1px solid var(--color-border); text-align: left; vertical-align: top; }
+.modal-body th { background: var(--color-secondary); color: var(--color-gray); }
+.pill { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: var(--radius-full); }
+.pill-ok { background: rgba(40,167,69,.12); color: #1c743a; }
+.pill-c { background: #fff7e0; color: #7a5b12; }
+.pill-note { background: var(--color-primary-alpha-10); color: var(--color-primary-dark); }
+.modal-body h4 { margin: 14px 0 6px; font-size: 13.5px; color: var(--color-dark); }
+.modal-body p, .modal-body li { line-height: 1.7; }
+.modal-body ul { padding-left: 18px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ 评审面板 ═══════════════ -->
+<div class="review-panel">
+  <div class="rp-row">
+    <span class="rp-title">IconGen V1 原型评审台</span>
+    <div class="rp-group" id="pageSwitcher">
+      <button class="rp-btn active" data-page="page001">PAGE001 主页</button>
+      <button class="rp-btn" data-page="page002">PAGE002 在线工具</button>
+      <button class="rp-btn" data-page="page003">PAGE003 落地页</button>
+    </div>
+    <div class="rp-group" id="scenarioGroup">
+      <button class="rp-btn" data-scene="normal">正常</button>
+      <button class="rp-btn" data-scene="loading">加载</button>
+      <button class="rp-btn" data-scene="success">成功</button>
+      <button class="rp-btn" data-scene="fail">失败</button>
+      <button class="rp-btn" data-scene="empty">空数据</button>
+      <button class="rp-btn" data-scene="error">异常</button>
+      <button class="rp-btn" data-scene="permission">权限</button>
+    </div>
+    <div class="rp-group">
+      <button class="rp-btn" id="btnCoverage">功能覆盖 F001-F032</button>
+      <button class="rp-btn" id="btnBList">B 类优化 11 项</button>
+      <button class="rp-btn" id="btnCList">C 类留档 5 组</button>
+      <button class="rp-btn" id="btnF032">F032 桌面版差异</button>
+    </div>
+    <div class="rp-readout" id="stateReadout">页面 <b>PAGE001</b> · 文件 <b>未选择</b> · 平台 <b>2</b> · 结果 <b>无</b></div>
+  </div>
+  <div class="rp-meta">V1 输入：PRD + product-review（B 类 11 项落地 / C 类留档）+ docs/07_design_system tokens。零外链；JSZip 为模拟打包层；页面徽标含来源。旧版 v0 原型见 prototype/v0-old/。</div>
+</div>
+
+<!-- ═══════════════ 浏览器窗口画框 ═══════════════ -->
+<div class="browser">
+  <div class="browser-chrome">
+    <div class="browser-dots"><span></span><span></span><span></span></div>
+    <div class="browser-address" id="addressBar">https://icon.open.i2kai.com/</div>
+  </div>
+  <div class="browser-viewport" id="viewport">
+
+    <!-- ══════════ PAGE001 项目主页 ══════════ -->
+    <div class="page active" id="page001">
+      <span class="page-badge">PAGE001 · V1 <span class="src">来源：PRD §6 PAGE001 · DS tokens §1（PG-04 统一基线）</span></span>
+      <div class="container">
+        <header class="topbar">
+          <a class="brand" data-goto="page001"><span class="brand-mark">IG</span><span>Icon Gen</span></a>
+          <nav class="nav" aria-label="主导航">
+            <a data-anchor="p1-features">能力</a>
+            <a data-anchor="p1-usage">使用</a>
+            <a data-goto="page002">在线工具</a>
+            <a class="ext-link" data-url="https://open.i2kai.com/projects#icon-gen">Open</a>
+            <a class="ext-link" data-url="https://github.com/LuoYaoSheng/lys-icon-gen">GitHub</a>
+            <a class="ext-link" data-url="https://gitee.com/luoyaosheng/lys-icon-gen">Gitee</a>
+          </nav>
+        </header>
+        <main>
+          <section class="hero">
+            <div>
+              <span class="eyebrow">lys Open Source</span>
+              <h1>多平台应用图标生成工具。</h1>
+              <p class="lead">Icon Gen 用于把一张高质量图标快速生成 iOS、Android、macOS、Windows、watchOS 所需的多尺寸资源和标准目录结构。它是 lys Open Source 体系中的项目资产生成工具。</p>
+              <div class="actions">
+                <a class="button-primary" data-goto="page002">打开在线工具</a>
+                <a class="button-secondary ext-link" data-url="https://github.com/LuoYaoSheng/lys-icon-gen">GitHub 源码</a>
+                <a class="button-secondary ext-link" data-url="https://gitee.com/luoyaosheng/lys-icon-gen">Gitee 源码</a>
+              </div>
+            </div>
+            <div class="preview" aria-label="图标生成预览">
+              <div class="preview-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <div class="preview-body">
+                <div class="icon-grid-tiles">
+                  <div class="icon-tile">16</div><div class="icon-tile">32</div><div class="icon-tile">64</div><div class="icon-tile">128</div>
+                  <div class="icon-tile">180</div><div class="icon-tile">256</div><div class="icon-tile">512</div><div class="icon-tile">1024</div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="section" id="p1-features">
+            <h2>项目能力</h2>
+            <p class="section-intro">覆盖应用发布前最常见的图标资产准备工作，重点是本地处理、结构化输出和跨平台规格统一。</p>
+            <div class="grid3">
+              <article class="feature-card"><strong>多平台规格</strong><p>支持 iOS、iPadOS、macOS、watchOS、Android 和 Windows 常用图标尺寸。</p></article>
+              <article class="feature-card"><strong>标准目录结构</strong><p>可生成 Xcode 需要的 <code>AppIcon.appiconset</code> 和 Android 资源目录结构。</p></article>
+              <article class="feature-card"><strong>浏览器本地处理</strong><p>Web 版使用 Canvas 在浏览器内处理图片，不上传原图，适合快速生成和临时处理。</p></article>
+            </div>
+          </section>
+          <section class="section" id="p1-usage">
+            <h2>使用入口</h2>
+            <p class="section-intro">当前项目包含 Web 版和 Electron 桌面版。线上主入口是项目站，在线工具作为体验入口保留。</p>
+            <table class="meta-table">
+              <tr><th>在线工具</th><td><a data-goto="page002">/tool/</a></td></tr>
+              <tr><th>源码仓库</th><td><a class="ext-link" data-url="https://github.com/LuoYaoSheng/lys-icon-gen">GitHub</a> · <a class="ext-link" data-url="https://gitee.com/luoyaosheng/lys-icon-gen">Gitee</a></td></tr>
+              <tr><th>项目体系</th><td><a class="ext-link" data-url="https://open.i2kai.com/projects#icon-gen">open.i2kai.com/projects#icon-gen</a></td></tr>
+              <tr><th>本地运行</th><td><code>cd web && npm install && npm start</code></td></tr>
+            </table>
+          </section>
+        </main>
+        <footer class="footer"><span>Icon Gen · Part of lys Open Source · LuoYaoSheng</span></footer>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE002 在线图标生成工具（核心页） ══════════ -->
+    <div class="page" id="page002">
+      <span class="page-badge">PAGE002 · V1 <span class="src">来源：PRD §6 PAGE002 + P4 B 类（FN-01/02/09 · PG-01/02/03/05/06 · FL-01/03/04）</span></span>
+      <div class="b-note">B 类优化落点：① 整区点击上传（PG-02）② 平台图标+数量徽标（PG-05）③ 尺寸模板表（PG-01/DS-1.3）④ 前缀条件说明（PG-06）⑤ 结果区 Tab+网格+计数+ZIP 树（FN-02/PG-01）⑥ 通知堆叠队列（FL-01）⑦ 平台级进度（FL-03）⑧ 结果过期提示（FL-04/FN-09）⑨ 重置单次（FN-01）⑩ 返回主页（PG-03）⑪ 统一 DS（PG-04）。</div>
+      <div class="container">
+        <header class="tool-header">
+          <a class="back-home" data-goto="page001">← Icon Gen · 返回主页</a>
+          <h1>图标生成器</h1>
+          <p>上传一个图像，轻松生成各平台所需的应用图标</p>
+        </header>
+
+        <main>
+          <!-- 上传卡片 -->
+          <section id="uploadSection" class="section">
+            <div class="card">
+              <div class="card-header"><h2>上传图像</h2></div>
+              <div class="card-body">
+                <div id="dropArea" class="drop-zone empty">
+                  <div id="uploadContent" class="upload-content visible">
+                    <div class="drop-icon">
+                      <!-- 旧版逐字沿用：web/public/tool/index.html:32-34 -->
+                      <svg width="64" height="64" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                    </div>
+                    <p>拖放图像到这里或点击上传</p>
+                    <p class="hint">建议上传1024×1024像素的PNG图像</p>
+                    <button id="uploadBtn" class="btn btn-primary">选择图像</button>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                  </div>
+                  <div id="previewContent" class="preview-content">
+                    <div class="preview-figure" id="previewFigure">预览占位<br>1024×1024</div>
+                    <div class="file-info"><p id="fileInfo">未选择文件</p></div>
+                    <div class="preview-actions">
+                      <button id="changeImageBtn" class="btn btn-secondary">更换图像</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="mock-lib">
+                  <div class="mk-title">评审通道 · 模拟文件库（v0 同款；真实拖放也可用：拖任意图片文件到上方区域）</div>
+                  <div class="mk-row">
+                    <button class="mock-btn" data-file="icon-1024.png">icon-1024.png · 1024×1024 · 245.76 KB</button>
+                    <button class="mock-btn" data-file="logo-800x600.png">logo-800x600.png · 非正方形</button>
+                    <button class="mock-btn" data-file="photo-6mb.png">photo-6mb.png · 6MB 超限</button>
+                    <button class="mock-btn" data-file="notes.txt">notes.txt · 非图片</button>
+                    <button class="mock-btn" data-file="broken.png">broken.png · 损坏文件</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 设置卡片 -->
+          <section class="section settings-section">
+            <div class="card">
+              <div class="card-header"><h2>图标设置</h2></div>
+              <div class="card-body">
+                <div class="settings-group">
+                  <h3>选择平台</h3>
+                  <div class="platforms-container" id="platformsContainer">
+                    <div class="platform-card selected" data-platform="iOS">
+                      <div class="pc-top"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><circle cx="12" cy="18.2" r="1"/></svg><span class="pc-name">iOS</span></div>
+                      <span class="pc-badge">15 个尺寸</span>
+                    </div>
+                    <div class="platform-card selected" data-platform="Android">
+                      <div class="pc-top"><svg viewBox="0 0 24 24"><path d="M6 10c0-3 2.7-5 6-5s6 2 6 5v6H6v-6zm2 8h1.6v2.4c0 .6-.4 1-1 1s-1-.4-1-1V18zm5.4 0H15v2.4c0 .6-.4 1-1 1s-1-.4-1-1V18zM7.6 3.6l1 1.7M16.4 3.6l-1 1.7M9 9.4v.8M15 9.4v.8" stroke-width="1.6" stroke-linecap="round" fill="none" stroke="currentColor"/></svg><span class="pc-name">Android</span></div>
+                      <span class="pc-badge">11 个尺寸</span>
+                    </div>
+                    <div class="platform-card" data-platform="macOS">
+                      <div class="pc-top"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.6"/><path d="M9 20h6M12 16v4" stroke-width="1.6" stroke-linecap="round" fill="none" stroke="currentColor"/></svg><span class="pc-name">macOS</span></div>
+                      <span class="pc-badge">10 个尺寸</span>
+                    </div>
+                    <div class="platform-card" data-platform="Windows">
+                      <div class="pc-top"><svg viewBox="0 0 24 24"><path d="M3.5 4.8l7.3-1v7.5h-7.3V4.8zm8.7-1.2l8.3-1.1v9.8h-8.3V3.6zM3.5 12.9h7.3v7.5l-7.3-1v-6.5zm8.7 0h8.3v9.8l-8.3-1.1v-8.7z"/></svg><span class="pc-name">Windows</span></div>
+                      <span class="pc-badge">10 个尺寸</span>
+                    </div>
+                    <div class="platform-card" data-platform="watchOS">
+                      <div class="pc-top"><svg viewBox="0 0 24 24"><rect x="7" y="6" width="10" height="12" rx="3"/><path d="M9.5 6V3.5h5V6M9.5 18v2.5h5V18" stroke-width="1.6" stroke-linecap="round" fill="none" stroke="currentColor"/></svg><span class="pc-name">watchOS</span></div>
+                      <span class="pc-badge">11 个尺寸</span>
+                    </div>
+                  </div>
+                  <!-- 尺寸模板表（V1 新增 UI，数据源 iconSizes.js，DS COMPONENT.md §1.3） -->
+                  <div class="template-fold" id="templateFold">
+                    <button class="tf-head" id="templateFoldBtn" type="button"><span>查看所选平台的尺寸模板明细（数据源：iconSizes.js · 57 项）</span><span>展开 ▾</span></button>
+                    <div class="tf-body"><table class="template-table"><thead><tr><th>平台</th><th>尺寸(px)</th><th>文件名</th><th>输出目录</th><th>倍率/类型</th><th>说明</th></tr></thead><tbody id="templateTableBody"></tbody></table></div>
+                  </div>
+                </div>
+
+                <div class="settings-group">
+                  <h3>输出选项</h3>
+                  <div class="options-container">
+                    <div class="option-item">
+                      <input type="checkbox" id="createSubFolders" checked>
+                      <label for="createSubFolders">为每个平台创建子文件夹</label>
+                    </div>
+                    <div class="option-item">
+                      <input type="checkbox" id="prefixFilename">
+                      <label for="prefixFilename">文件名添加平台前缀<span class="opt-cond" id="prefixCond">仅在不创建子文件夹时生效</span></label>
+                    </div>
+                    <div class="option-item">
+                      <input type="checkbox" id="createContentsJson" checked>
+                      <label for="createContentsJson">为iOS/macOS创建Contents.json文件</label>
+                    </div>
+                    <div class="option-item">
+                      <input type="checkbox" id="createAdaptiveIcons" checked>
+                      <label for="createAdaptiveIcons">为Android创建自适应图标相关文件</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="button-container">
+                  <button id="generateBtn" class="btn btn-primary" disabled>生成图标</button>
+                  <button id="resetBtn" class="btn btn-secondary">重置</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 结果卡片 -->
+          <section id="resultSection" class="section" style="display: none;">
+            <div class="card">
+              <div class="card-header"><h2>生成结果</h2></div>
+              <div class="card-body">
+                <div class="stale-banner" id="staleBanner">配置已变更（平台或输出选项）：当前结果基于旧配置生成，建议重新生成；直接下载将按新配置组包。</div>
+                <div class="result-summary" id="resultSummary"></div>
+                <div class="result-tabs" id="resultTabs"></div>
+                <div class="icon-grid" id="iconGrid"></div>
+                <div class="zip-fold" id="zipFold">
+                  <button class="zf-head" id="zipFoldBtn" type="button">预览 ZIP 目录结构（组包规则：fileUtils.js）<span>展开 ▾</span></button>
+                  <div class="zf-body"><div class="zip-tree" id="zipTree"></div></div>
+                </div>
+                <div class="download-section">
+                  <p style="color: var(--color-text); margin-bottom: 15px;">点击下面的按钮下载所有生成的图标 (ZIP格式)</p>
+                  <button id="downloadZipBtn" class="btn btn-success">下载所有图标</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer><p>&copy; 2023 图标生成器 | 使用 HTML, CSS 和 JavaScript 构建</p></footer>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE003 iconsize 落地页 ══════════ -->
+    <div class="page" id="page003">
+      <span class="page-badge">PAGE003 · V1 <span class="src">来源：PRD §6 PAGE003 + P4 B（FN-03/F028 · FN-04/F029 · FN-10）+ C 类留档（F030/F031）</span></span>
+      <div class="c-note">C 类留档（默认不做，待用户决策）：F030 系统检测推荐下载、F031 扩展动效（打字机/图片预览弹窗/主题切换/复制代码/版本号填充）在 V1 中不实现——下载卡无「推荐」徽标、无打字机等动效。详见 product-review §5.2 C-1/C-2。</div>
+      <div>
+        <header class="lp-header" id="lpHeader">
+          <div class="lp-container lp-nav">
+            <div class="lp-logo"><span class="logo-ph">旧资产<br>iconsize.jpg</span>iconsize</div>
+            <button class="mobile-menu-toggle" id="menuToggle" type="button">☰</button>
+            <nav class="lp-menu" id="lpMenu">
+              <a data-anchor="p3-features">特性</a>
+              <a data-anchor="p3-how">使用方法</a>
+              <a data-anchor="p3-download">下载</a>
+              <a data-anchor="p3-faq">常见问题</a>
+              <a data-anchor="p3-contact">联系我们</a>
+              <a class="ext-link" data-url="https://gitee.com/luoyaosheng/lys-icon-gen">Gitee</a>
+            </nav>
+          </div>
+        </header>
+
+        <section class="lp-container lp-hero">
+          <h1>一键生成所有平台图标</h1>
+          <p>上传一张图片，自动生成 iOS、Android、macOS、Windows 与 watchOS 全部所需尺寸的应用图标，浏览器本地处理，不上传图片。</p>
+          <div class="lp-hero-actions">
+            <a class="btn btn-primary" data-anchor="p3-download">立即下载</a>
+            <a class="btn btn-secondary" data-anchor="p3-how">了解更多</a>
+          </div>
+          <div class="platform-icons">
+            <svg viewBox="0 0 24 24"><title>Apple（旧版 Font Awesome fa-apple，V1 内联等价）</title><rect x="7" y="2.5" width="10" height="19" rx="2.4"/></svg>
+            <svg viewBox="0 0 24 24"><title>Android</title><circle cx="12" cy="10" r="6"/><path d="M8 17h8M10 20h4" stroke-width="1.8" stroke-linecap="round" stroke="currentColor" fill="none"/></svg>
+            <svg viewBox="0 0 24 24"><title>Windows</title><path d="M3.5 4.8l7.3-1v7.5h-7.3V4.8zm8.7-1.2l8.3-1.1v9.8h-8.3V3.6zM3.5 12.9h7.3v7.5l-7.3-1v-6.5zm8.7 0h8.3v9.8l-8.3-1.1v-8.7z"/></svg>
+            <svg viewBox="0 0 24 24"><title>Linux（旧版 FA fa-linux，V1 简化为终端轮廓）</title><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M7.5 9l3 3-3 3M13 15h4" stroke-width="1.8" stroke-linecap="round" stroke="currentColor" fill="none"/></svg>
+          </div>
+          <div class="demo-ph">演示占位 · 旧资产 iconsize.gif（二进制不入单文件原型）</div>
+        </section>
+
+        <section class="lp-container lp-section" id="p3-features">
+          <h2>产品特性</h2>
+          <p class="sub">为什么选择 iconsize</p>
+          <div class="features-grid">
+            <div class="feature-card"><strong>快速生成</strong><p>只需一张图片，几秒钟内生成所有平台所需的图标尺寸。</p></div>
+            <div class="feature-card"><strong>多平台支持</strong><p>支持 iOS、Android、macOS、Windows 和 watchOS 五大平台。</p></div>
+            <div class="feature-card"><strong>开发者友好</strong><p>生成符合各平台规范的标准目录结构与配置文件。</p></div>
+            <div class="feature-card"><strong>桌面应用</strong><p>提供 macOS / Windows / Linux 桌面版本，完全离线使用。</p></div>
+            <div class="feature-card"><strong>图像优化</strong><p>自动缩放处理，保持图标清晰度（上传建议 1024×1024 PNG）。</p></div>
+            <div class="feature-card"><strong>结构化输出</strong><p>ZIP 内含 Xcode AppIcon.appiconset、Android res/mipmap 等标准结构。</p></div>
+          </div>
+        </section>
+
+        <section class="lp-container lp-section">
+          <h2>效果展示</h2>
+          <p class="sub">一张源图 → 各平台多尺寸图标</p>
+          <div class="showcase">
+            <div class="sc-col"><div class="sc-title">源图 1024×1024</div><div class="sc-sizes"><div class="sc-thumb" style="width:120px;height:120px;">1024</div></div></div>
+            <div class="sc-col"><div class="sc-title">iOS</div><div class="sc-sizes"><div class="sc-thumb" style="width:84px;height:84px;">180</div><div class="sc-thumb" style="width:56px;height:56px;">120</div><div class="sc-thumb" style="width:38px;height:38px;">80</div></div></div>
+            <div class="sc-col"><div class="sc-title">Android</div><div class="sc-sizes"><div class="sc-thumb" style="width:90px;height:90px;">192</div><div class="sc-thumb" style="width:68px;height:68px;">144</div><div class="sc-thumb" style="width:46px;height:46px;">96</div></div></div>
+            <div class="sc-col"><div class="sc-title">macOS / Windows</div><div class="sc-sizes"><div class="sc-thumb" style="width:84px;height:84px;">256</div><div class="sc-thumb" style="width:52px;height:52px;">128</div><div class="sc-thumb" style="width:32px;height:32px;">64</div></div></div>
+          </div>
+        </section>
+
+        <section class="lp-container lp-section" id="p3-how">
+          <h2>使用方法</h2>
+          <p class="sub">五步完成图标生成</p>
+          <div class="steps">
+            <div class="step"><div class="step-number">1</div><h3>准备源图像</h3><p>选择一张高质量的正方形图像，推荐 1024×1024 像素或更高。</p></div>
+            <div class="step"><div class="step-number">2</div><h3>上传图像</h3><p>拖放或点击上传源图像到在线工具。</p></div>
+            <div class="step"><div class="step-number">3</div><h3>选择平台</h3><p>勾选需要生成图标的平台（iOS、Android 等）。</p></div>
+            <div class="step"><div class="step-number">4</div><h3>生成图标</h3><p>点击生成按钮，自动创建所有尺寸。</p></div>
+            <div class="step"><div class="step-number">5</div><h3>下载使用</h3><p>下载 ZIP 包，按目录结构放入工程。</p></div>
+          </div>
+        </section>
+
+        <section class="lp-container lp-section" id="p3-download">
+          <h2>下载</h2>
+          <p class="sub">选择你的平台（桌面版 3.0.0 · Gitee Releases 分发）</p>
+          <div class="download-options">
+            <div class="download-card">
+              <svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/></svg>
+              <h3>macOS</h3><p>macOS 10.13+ · DMG</p>
+              <button class="btn btn-primary ext-link" data-url="https://gitee.com/luoyaosheng/lys-icon-gen/releases/tag/3.0.0">下载 DMG</button>
+            </div>
+            <div class="download-card">
+              <svg viewBox="0 0 24 24"><path d="M3.5 4.8l7.3-1v7.5h-7.3V4.8zm8.7-1.2l8.3-1.1v9.8h-8.3V3.6zM3.5 12.9h7.3v7.5l-7.3-1v-6.5zm8.7 0h8.3v9.8l-8.3-1.1v-8.7z"/></svg>
+              <h3>Windows</h3><p>Windows 10+ · 安装包</p>
+              <button class="btn btn-primary ext-link" data-url="https://gitee.com/luoyaosheng/lys-icon-gen/releases/tag/3.0.0">下载安装包</button>
+            </div>
+            <div class="download-card">
+              <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
+              <h3>Linux</h3><p>主流发行版 · AppImage</p>
+              <button class="btn btn-primary ext-link" data-url="https://gitee.com/luoyaosheng/lys-icon-gen/releases/tag/3.0.0">下载 AppImage</button>
+            </div>
+            <div class="download-card">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12h7" stroke-width="1.8" stroke-linecap="round" stroke="#fff" fill="none"/></svg>
+              <h3>网页版</h3><p>无需下载 · 浏览器即用</p>
+              <button class="btn btn-success" data-goto="page002">立即使用</button>
+            </div>
+          </div>
+          <div class="testimonials">
+            <div class="testimonial"><p>❝ 作为一名 UI 设计师，我推荐每个应用开发团队都使用 iconsize，它确保了图标在各平台的一致性。</p><div class="quote-author">- UI设计师</div></div>
+            <div class="testimonial"><p>❝ 这是我用过最顺手的图标生成工具，界面简洁，目录结构直接能拖进 Xcode。</p><div class="quote-author">- iOS 开发者</div></div>
+            <div class="testimonial"><p>❝ 上架前 5 分钟补齐全平台图标，免费且不用注册，非常省心。</p><div class="quote-author">- 独立开发者</div></div>
+          </div>
+        </section>
+
+        <section class="lp-container lp-section" id="p3-faq">
+          <h2>常见问题</h2>
+          <p class="sub">B/FN-10：FAQ 文案已按真实能力改写（移除旧版 favicon/PWA 超承诺表述）</p>
+          <div class="faq-list">
+            <div class="faq-item"><button class="faq-question" type="button">推荐使用什么格式和尺寸的源图像？</button><div class="faq-answer"><p>推荐 PNG 格式、1024×1024 像素或更高的正方形图像，透明背景可确保图标在各场景下显示良好。</p></div></div>
+            <div class="faq-item"><button class="faq-question" type="button">支持哪些平台的图标生成？</button><div class="faq-answer"><p>iOS、Android、macOS、Windows、watchOS 五平台的全部常用应用图标尺寸（共 57 项模板）。</p></div></div>
+            <div class="faq-item"><button class="faq-question" type="button">可以集成到我的构建流程吗？</button><div class="faq-answer"><p>当前提供网页版与桌面版手动生成，暂未提供命令行集成。</p></div></div>
+            <div class="faq-item"><button class="faq-question" type="button">支持批量处理多张图片吗？</button><div class="faq-answer"><p>目前每次处理一张图片（网页版与桌面版一致）；批量能力在考虑中，尚未提供。</p></div></div>
+            <div class="faq-item"><button class="faq-question" type="button">生成过程需要联网吗？</button><div class="faq-answer"><p>不需要。网页版在浏览器本地（Canvas）处理，图片不上传服务器；桌面版完全离线。</p></div></div>
+            <div class="faq-item"><button class="faq-question" type="button">工具是免费的吗？</button><div class="faq-answer"><p>是。开源（Apache-2.0）且免费，无登录、无付费功能。</p></div></div>
+          </div>
+        </section>
+
+        <section class="lp-container lp-section" id="p3-contact">
+          <h2>联系我们</h2>
+          <p class="sub">B/FN-03（F028 修复规格）：表单校验与提交反馈已生效（纯前端，无后端）</p>
+          <div class="contact-grid">
+            <ul class="contact-list">
+              <li>邮件：support@iconsize.com（真实性【未知】，照旧展示）</li>
+              <li>Gitee Issues：仓库问题反馈</li>
+              <li>Twitter：@iconsizeapp（真实性【未知】）</li>
+              <li>社区讨论：discussions.iconsize.com（真实性【未知】）</li>
+              <li>微信公众号：极客第一行</li>
+            </ul>
+            <div class="contact-form">
+              <div class="form-success" id="formSuccess">消息已发送（演示：纯前端模拟提交，无后端）。感谢您的反馈！</div>
+              <form id="contactForm" novalidate>
+                <div class="form-field" data-field="name">
+                  <label for="cf-name">姓名 *</label>
+                  <input id="cf-name" name="name" type="text" placeholder="您的姓名">
+                  <div class="field-error">请输入姓名</div>
+                </div>
+                <div class="form-field" data-field="email">
+                  <label for="cf-email">邮箱 *</label>
+                  <input id="cf-email" name="email" type="email" placeholder="you@example.com">
+                  <div class="field-error">请输入有效邮箱</div>
+                </div>
+                <div class="form-field" data-field="subject">
+                  <label for="cf-subject">主题</label>
+                  <input id="cf-subject" name="subject" type="text" placeholder="主题（选填）">
+                </div>
+                <div class="form-field" data-field="message">
+                  <label for="cf-message">消息 *</label>
+                  <textarea id="cf-message" name="message" rows="4" placeholder="想说的话…"></textarea>
+                  <div class="field-error">请输入消息内容</div>
+                </div>
+                <button type="submit" class="btn btn-primary">发送消息</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <footer class="lp-footer">
+          <div class="lp-container">
+            <div class="footer-grid">
+              <div><h4>iconsize</h4><ul><li>多平台图标生成工具</li><li>浏览器本地处理 · 不上传图片</li></ul></div>
+              <div><h4>快速链接</h4><ul>
+                <li><a data-anchor="p3-features">特性</a></li>
+                <li><a data-anchor="p3-download">下载</a></li>
+                <li><a data-goto="page002">网页版工具</a></li>
+              </ul></div>
+              <div><h4>联系</h4><ul>
+                <li><a class="ext-link" data-url="https://gitee.com/luoyaosheng/lys-icon-gen">Gitee</a></li>
+                <li>support@iconsize.com</li>
+              </ul></div>
+              <div><h4>法律信息</h4><ul>
+                <li><span class="dead-link" title="旧版死链（#），V1 如实标注不伪造">隐私政策</span></li>
+                <li><span class="dead-link" title="旧版死链（#），V1 如实标注不伪造">使用条款</span></li>
+                <li><span class="dead-link" title="旧版死链（#），V1 如实标注不伪造">许可协议</span></li>
+                <li><a class="ext-link" data-url="https://github.com/LuoYaoSheng/lys-icon-gen/blob/master/LICENSE">贡献指南（V1 改指仓库）</a></li>
+              </ul></div>
+            </div>
+            <div class="copyright">&copy; 2023 iconsize. 保留所有权利.（照旧还原 · D/PG-10）</div>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 通知堆叠队列（B/FL-01） -->
+<div class="notification-stack" id="notificationStack"></div>
+
+<!-- 弹层：功能覆盖 -->
+<div class="modal-mask" id="modalCoverage">
+  <div class="modal">
+    <div class="modal-head"><h3>功能覆盖对照 · PRD F001-F032 vs V1 原型</h3><button class="modal-close" data-close="modalCoverage">×</button></div>
+    <div class="modal-body" id="coverageBody"></div>
+  </div>
+</div>
+
+<!-- 弹层：B 类优化 -->
+<div class="modal-mask" id="modalBList">
+  <div class="modal">
+    <div class="modal-head"><h3>P4 B 类优化 11 项 · V1 落地核验表</h3><button class="modal-close" data-close="modalBList">×</button></div>
+    <div class="modal-body" id="bListBody"></div>
+  </div>
+</div>
+
+<!-- 弹层：C 类留档 -->
+<div class="modal-mask" id="modalCList">
+  <div class="modal">
+    <div class="modal-head"><h3>P4 C 类待用户决策 5 组 · 默认不做（留档）</h3><button class="modal-close" data-close="modalCList">×</button></div>
+    <div class="modal-body" id="cListBody"></div>
+  </div>
+</div>
+
+<!-- 弹层：F032 桌面版差异 -->
+<div class="modal-mask" id="modalF032">
+  <div class="modal">
+    <div class="modal-head"><h3>F032 桌面版（Electron）差异说明 · 以差异说明覆盖</h3><button class="modal-close" data-close="modalF032">×</button></div>
+    <div class="modal-body">
+      <p>桌面壳不在浏览器原型范围（PRD §6 限定），其能力与差异以本卡覆盖（来源：reverse-analysis ②⑨、product-review C-4）：</p>
+      <h4>桌面版独有能力（web 版无）</h4>
+      <ul>
+        <li>导出到本地文件夹（目录选择）、打开输出文件夹</li>
+        <li>electron-store 配置持久化（selectedPlatforms / lastOutputPath）</li>
+        <li>原生菜单（打开图片 Cmd+O / 导出 Cmd+E / 关于）、紧凑/展开双窗口尺寸</li>
+        <li>nativeImage 系统级生成（与 web Canvas 等价）</li>
+      </ul>
+      <h4>已知差异 / bug（旧版如实记录）</h4>
+      <ul>
+        <li>createContentsJson 选项不生效（取消勾选仍生成 Contents.json；main.js:315-339 未转发参数）——若桌面壳保留，V1 桌面版必须修复</li>
+        <li>模板差异：desktop Windows 无 24×24；watchOS 多 66×66/40×40、少 87×87/80×80</li>
+        <li>帮助菜单 GitHub 链接为占位死链（yourusername/icon-generator）</li>
+        <li>品牌仍为 iconsize（与 web 的 Icon Gen 不一致）</li>
+      </ul>
+      <h4>V1 处置</h4>
+      <p>桌面壳去留为 <b>C-4 待用户决策</b>（默认不做）。P7 SYSTEM_ARCH.md 给出【建议，待用户确认】：V1 先聚焦 web 重建，桌面壳暂缓并归档差异清单。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 弹层：ZIP 清单（模拟下载） -->
+<div class="modal-mask" id="modalZip">
+  <div class="modal">
+    <div class="modal-head"><h3 id="zipModalTitle">app-icons.zip · 内容清单（模拟打包层）</h3><button class="modal-close" data-close="modalZip">×</button></div>
+    <div class="modal-body">
+      <p id="zipModalSummary" style="margin-bottom:12px;"></p>
+      <div class="zip-tree" id="zipModalTree" style="max-height:420px; overflow:auto; border:1px solid var(--color-border); border-radius:8px; padding:12px 16px; background:var(--color-secondary);"></div>
+      <p style="margin-top:12px; color:var(--color-gray); font-size:12px;">说明：原型零依赖，不生成真实二进制 ZIP；清单规则与 fileUtils.js 逐路径一致（docs/07_design_system/GUIDELINES.md §4.2）。真实下载行为以 success 通知「下载已开始」模拟。</p>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   V1 原型逻辑
+   ============================================================ */
+
+/* ---------- 公共参数（唯一事实源：docs/07_design_system/GUIDELINES.md §4；数据源 iconSizes.js） ---------- */
+var PLATFORMS = ['iOS', 'Android', 'macOS', 'Windows', 'watchOS'];
+
+var ICON_TEMPLATES = {
+  iOS: [
+    { size: 20, name: 'icon-20.png', scale: '1x', idiom: 'iphone', desc: '通知图标@1x' },
+    { size: 40, name: 'icon-20@2x.png', scale: '2x', idiom: 'iphone', desc: '通知图标@2x' },
+    { size: 60, name: 'icon-20@3x.png', scale: '3x', idiom: 'iphone', desc: '通知图标@3x' },
+    { size: 29, name: 'icon-29.png', scale: '1x', idiom: 'iphone', desc: '设置图标@1x' },
+    { size: 58, name: 'icon-29@2x.png', scale: '2x', idiom: 'iphone', desc: '设置图标@2x' },
+    { size: 87, name: 'icon-29@3x.png', scale: '3x', idiom: 'iphone', desc: '设置图标@3x' },
+    { size: 40, name: 'icon-40.png', scale: '1x', idiom: 'iphone', desc: 'Spotlight图标@1x' },
+    { size: 80, name: 'icon-40@2x.png', scale: '2x', idiom: 'iphone', desc: 'Spotlight图标@2x' },
+    { size: 120, name: 'icon-40@3x.png', scale: '3x', idiom: 'iphone', desc: 'Spotlight图标@3x' },
+    { size: 76, name: 'icon-76.png', scale: '1x', idiom: 'ipad', desc: 'iPad应用图标@1x' },
+    { size: 152, name: 'icon-76@2x.png', scale: '2x', idiom: 'ipad', desc: 'iPad应用图标@2x' },
+    { size: 167, name: 'icon-83.5@2x.png', scale: '2x', idiom: 'ipad', desc: 'iPad Pro应用图标@2x' },
+    { size: 120, name: 'icon-60@2x.png', scale: '2x', idiom: 'iphone', desc: 'iPhone应用图标@2x' },
+    { size: 180, name: 'icon-60@3x.png', scale: '3x', idiom: 'iphone', desc: 'iPhone应用图标@3x' },
+    { size: 1024, name: 'icon-1024.png', scale: '1x', idiom: 'ios-marketing', desc: 'App Store图标' }
+  ],
+  Android: [
+    { size: 36, name: 'ic_launcher.png', folder: 'mipmap-ldpi', type: 'launcher', desc: 'ldpi' },
+    { size: 48, name: 'ic_launcher.png', folder: 'mipmap-mdpi', type: 'launcher', desc: 'mdpi' },
+    { size: 72, name: 'ic_launcher.png', folder: 'mipmap-hdpi', type: 'launcher', desc: 'hdpi' },
+    { size: 96, name: 'ic_launcher.png', folder: 'mipmap-xhdpi', type: 'launcher', desc: 'xhdpi' },
+    { size: 144, name: 'ic_launcher.png', folder: 'mipmap-xxhdpi', type: 'launcher', desc: 'xxhdpi' },
+    { size: 192, name: 'ic_launcher.png', folder: 'mipmap-xxxhdpi', type: 'launcher', desc: 'xxxhdpi' },
+    { size: 108, name: 'ic_launcher_foreground.png', folder: 'mipmap-mdpi', type: 'adaptive', desc: '自适应图标 mdpi' },
+    { size: 162, name: 'ic_launcher_foreground.png', folder: 'mipmap-hdpi', type: 'adaptive', desc: '自适应图标 hdpi' },
+    { size: 216, name: 'ic_launcher_foreground.png', folder: 'mipmap-xhdpi', type: 'adaptive', desc: '自适应图标 xhdpi' },
+    { size: 324, name: 'ic_launcher_foreground.png', folder: 'mipmap-xxhdpi', type: 'adaptive', desc: '自适应图标 xxhdpi' },
+    { size: 432, name: 'ic_launcher_foreground.png', folder: 'mipmap-xxxhdpi', type: 'adaptive', desc: '自适应图标 xxxhdpi' }
+  ],
+  macOS: [
+    { size: 16, name: 'icon_16x16.png', scale: '1x', desc: '16x16@1x' },
+    { size: 32, name: 'icon_16x16@2x.png', scale: '2x', desc: '16x16@2x' },
+    { size: 32, name: 'icon_32x32.png', scale: '1x', desc: '32x32@1x' },
+    { size: 64, name: 'icon_32x32@2x.png', scale: '2x', desc: '32x32@2x' },
+    { size: 128, name: 'icon_128x128.png', scale: '1x', desc: '128x128@1x' },
+    { size: 256, name: 'icon_128x128@2x.png', scale: '2x', desc: '128x128@2x' },
+    { size: 256, name: 'icon_256x256.png', scale: '1x', desc: '256x256@1x' },
+    { size: 512, name: 'icon_256x256@2x.png', scale: '2x', desc: '256x256@2x' },
+    { size: 512, name: 'icon_512x512.png', scale: '1x', desc: '512x512@1x' },
+    { size: 1024, name: 'icon_512x512@2x.png', scale: '2x', desc: '512x512@2x' }
+  ],
+  Windows: [
+    { size: 16, name: 'Square16Logo.png', desc: 'Square16x16Logo' },
+    { size: 24, name: 'Square24Logo.png', desc: 'Square24x24Logo' },
+    { size: 32, name: 'Square32Logo.png', desc: 'Square32x32Logo' },
+    { size: 44, name: 'Square44Logo.png', desc: 'Square44x44Logo' },
+    { size: 48, name: 'Square48Logo.png', desc: 'Square48x48Logo' },
+    { size: 64, name: 'Square64Logo.png', desc: 'Square64x64Logo' },
+    { size: 96, name: 'Square96Logo.png', desc: 'Square96x96Logo' },
+    { size: 128, name: 'Square128Logo.png', desc: 'Square128x128Logo' },
+    { size: 256, name: 'Square256Logo.png', desc: 'Square256x256Logo' },
+    { size: 200, name: 'StoreLogo.png', desc: '应用商店图标' }
+  ],
+  watchOS: [
+    { size: 48, name: 'icon-24@2x.png', role: 'notificationCenter', subtype: '38mm', scale: '2x', desc: '通知中心38mm' },
+    { size: 55, name: 'icon-27-5@2x.png', role: 'notificationCenter', subtype: '42mm', scale: '2x', desc: '通知中心42mm' },
+    { size: 58, name: 'icon-29@2x.png', role: 'companionSettings', scale: '2x', desc: '设置' },
+    { size: 87, name: 'icon-29@3x.png', role: 'companionSettings', scale: '3x', desc: '设置' },
+    { size: 80, name: 'icon-40@2x.png', role: 'appLauncher', subtype: '38mm', scale: '2x', desc: '主屏幕38mm' },
+    { size: 88, name: 'icon-44@2x.png', role: 'longLook', subtype: '42mm', scale: '2x', desc: '长按42mm' },
+    { size: 100, name: 'icon-50@2x.png', role: 'appLauncher', subtype: '44mm', scale: '2x', desc: '主屏幕44mm' },
+    { size: 172, name: 'icon-86@2x.png', role: 'quickLook', subtype: '38mm', scale: '2x', desc: '短视图38mm' },
+    { size: 196, name: 'icon-98@2x.png', role: 'quickLook', subtype: '42mm', scale: '2x', desc: '短视图42mm' },
+    { size: 216, name: 'icon-108@2x.png', role: 'quickLook', subtype: '44mm', scale: '2x', desc: '短视图44mm' },
+    { size: 1024, name: 'icon-1024.png', role: 'watch-marketing', scale: '1x', desc: 'App Store' }
+  ]
+};
+
+var PLATFORM_DIR = {
+  iOS: 'iOS/Assets.xcassets/AppIcon.appiconset',
+  macOS: 'macOS/Assets.xcassets/AppIcon.appiconset',
+  watchOS: 'watchOS/Assets.xcassets/AppIcon.appiconset',
+  Windows: 'Windows/Assets',
+  Android: 'Android/res'
+};
+var MIPMAP_DIRS = ['mipmap-ldpi', 'mipmap-mdpi', 'mipmap-hdpi', 'mipmap-xhdpi', 'mipmap-xxhdpi', 'mipmap-xxxhdpi'];
+
+/* 模拟文件库（v0 同款口径） */
+var MOCK_FILES = {
+  'icon-1024.png': { name: 'icon-1024.png', type: 'image/png', size: 251658, width: 1024, height: 1024, tag: '推荐 · 正方形' },
+  'logo-800x600.png': { name: 'logo-800x600.png', type: 'image/png', size: 189342, width: 800, height: 600, tag: '非正方形' },
+  'photo-6mb.png': { name: 'photo-6mb.png', type: 'image/png', size: 6291456, width: 2048, height: 2048, tag: '超 5MB' },
+  'notes.txt': { name: 'notes.txt', type: 'text/plain', size: 2048, tag: '非图片' },
+  'broken.png': { name: 'broken.png', type: 'image/png', size: 1024, width: 0, height: 0, broken: true, tag: '损坏文件' }
+};
+
+/* ---------- 全局状态（对齐 P7 STATE_MACHINE.md 设计） ---------- */
+var state = {
+  page: 'page001',
+  file: null,
+  platforms: ['iOS', 'Android'],
+  options: { createSubFolders: true, prefixFilename: false, createContentsJson: true, createAdaptiveIcons: true },
+  generated: false,
+  generating: false,
+  generatedConfigKey: '',
+  generatingTimers: []
+};
+
+/* ---------- 小工具 ---------- */
+function $(id) { return document.getElementById(id); }
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+function configKey() {
+  return state.platforms.slice().sort().join(',') + '|' +
+    state.options.createSubFolders + ',' + state.options.prefixFilename + ',' +
+    state.options.createContentsJson + ',' + state.options.createAdaptiveIcons;
+}
+
+/* ---------- 通知堆叠队列（B/FL-01：多条并存，独立计时） ---------- */
+var notifyCount = 0;
+function notify(type, message, duration) {
+  var stack = $('notificationStack');
+  while (stack.children.length >= 3) stack.removeChild(stack.firstChild);
+  var el = document.createElement('div');
+  el.className = 'notification-item n-' + type;
+  var tag = document.createElement('span');
+  tag.className = 'n-tag';
+  tag.textContent = { info: 'INFO', success: '成功', error: '错误', warning: '警告' }[type] || type;
+  var dot = document.createElement('span');
+  dot.className = 'n-dot';
+  var msg = document.createElement('span');
+  msg.textContent = message;
+  el.appendChild(dot); el.appendChild(tag); el.appendChild(msg);
+  stack.appendChild(el);
+  notifyCount++;
+  var id = notifyCount;
+  setTimeout(function () { el.classList.add('show'); }, 10);
+  if (duration === undefined) duration = 3000;
+  if (duration > 0) {
+    setTimeout(function () {
+      el.classList.remove('show');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 350);
+    }, duration);
+  }
+  return id;
+}
+function hideNotify(id) {
+  /* V1：队列化后不再全局清除；仅清除常驻 loading（duration=0）项 */
+  var stack = $('notificationStack');
+  for (var i = 0; i < stack.children.length; i++) {
+    var el = stack.children[i];
+    if (el.dataset.notifyId === String(id)) {
+      el.classList.remove('show');
+      (function (node) { setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 350); })(el);
+    }
+  }
+}
+
+/* ---------- 页面切换与地址栏 ---------- */
+var PAGE_URL = {
+  page001: 'https://icon.open.i2kai.com/',
+  page002: 'https://icon.open.i2kai.com/tool/',
+  page003: 'https://【未知域名】/（landing 独立部署，域名未知）'
+};
+var PAGE_LABEL = { page001: 'PAGE001', page002: 'PAGE002', page003: 'PAGE003' };
+
+function showPage(pageId) {
+  state.page = pageId;
+  var pages = document.querySelectorAll('.page');
+  for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
+  $(pageId).classList.add('active');
+  var btns = document.querySelectorAll('#pageSwitcher .rp-btn');
+  for (var j = 0; j < btns.length; j++) btns[j].classList.toggle('active', btns[j].dataset.page === pageId);
+  $('addressBar').textContent = PAGE_URL[pageId];
+  $('viewport').scrollTop = 0;
+  updateReadout();
+}
+
+/* ---------- 状态读数 ---------- */
+function updateReadout() {
+  $('stateReadout').innerHTML = '页面 <b>' + PAGE_LABEL[state.page] + '</b> · 文件 <b>' +
+    (state.file ? esc(state.file.name) : '未选择') + '</b> · 平台 <b>' + state.platforms.length +
+    '</b> · 结果 <b>' + (state.generating ? '生成中…' : (state.generated ? (state.generatedConfigKey !== configKey() ? '已过期' : '已生成') : '无')) + '</b>';
+}
+
+/* ---------- 上传与校验（F001-F007） ---------- */
+function processFile(file) {
+  if (!file.type || file.type.indexOf('image') === -1) {
+    notify('error', '请选择有效的图像文件');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    notify('error', '文件大小不能超过5MB');
+    return;
+  }
+  if (file.broken) {
+    notify('error', '处理图像时出错: 图像加载失败');
+    return;
+  }
+  state.file = file;
+  renderPreview();
+  if (file.width !== file.height) {
+    notify('warning', '警告：图像不是正方形，可能会导致图标变形', 5000); /* FL-01：队列下与 success 并存可见 */
+  }
+  notify('success', '图像已成功加载');
+  markStaleIfNeeded();
+  updateGenerateBtn();
+  updateReadout();
+}
+
+function renderPreview() {
+  var f = state.file;
+  $('uploadContent').classList.remove('visible');
+  $('previewContent').classList.add('visible');
+  var dz = $('dropArea');
+  dz.classList.remove('empty');
+  dz.classList.add('loaded');
+  var fig = $('previewFigure');
+  fig.innerHTML = '预览占位<br>' + f.width + '×' + f.height;
+  fig.style.background = 'linear-gradient(135deg,var(--color-primary),var(--color-placeholder-2))';
+  fig.style.color = '#fff';
+  $('fileInfo').textContent = '文件名: ' + f.name + ' | 大小: ' + formatFileSize(f.size) + ' | 尺寸: ' + f.width + '×' + f.height + 'px';
+}
+
+/* ---------- 平台与选项联动（F008/F009 + FL-04） ---------- */
+function updateGenerateBtn() {
+  $('generateBtn').disabled = !(state.file && state.platforms.length > 0);
+}
+
+function markStaleIfNeeded() {
+  if (state.generated && state.generatedConfigKey !== configKey()) {
+    $('staleBanner').classList.add('show');
+  } else {
+    $('staleBanner').classList.remove('show');
+  }
+  updateReadout();
+}
+
+/* ---------- 尺寸模板表（DS §1.3） ---------- */
+function renderTemplateTable() {
+  var body = $('templateTableBody');
+  var html = '';
+  state.platforms.forEach(function (p) {
+    ICON_TEMPLATES[p].forEach(function (t) {
+      var dir = (p === 'Android') ? ('Android/res/' + (t.folder || '')) : PLATFORM_DIR[p];
+      html += '<tr><td>' + p + '</td><td>' + t.size + '</td><td><code>' + esc(t.name) + '</code></td><td>' + dir + '</td><td>' +
+        (t.scale || t.type || '1x') + '</td><td>' + esc(t.desc || '') + '</td></tr>';
+    });
+  });
+  body.innerHTML = html || '<tr><td colspan="6" style="color:var(--color-gray)">未选择平台</td></tr>';
+}
+
+/* ---------- ZIP 组包规则（guidelines §4.2；与 fileUtils.js 一致） ---------- */
+function buildZipModel(platforms, options) {
+  var lines = [];
+  var png = 0, res = 0;
+  platforms.forEach(function (p) {
+    var tpl = ICON_TEMPLATES[p];
+    if (!tpl) return;
+    if (options.createSubFolders) {
+      if (p === 'Android') {
+        lines.push({ depth: 0, text: p + '/', dir: true });
+        lines.push({ depth: 1, text: 'res/', dir: true });
+        var byDir = {};
+        tpl.forEach(function (t) {
+          var d = t.folder;
+          byDir[d] = byDir[d] || [];
+          byDir[d].push(t);
+        });
+        MIPMAP_DIRS.forEach(function (d) {
+          if (!byDir[d]) return;
+          lines.push({ depth: 2, text: d + '/', dir: true });
+          byDir[d].forEach(function (t) {
+            lines.push({ depth: 3, text: t.name + '  (' + t.size + 'px)', file: true });
+            png++;
+          });
+          if (options.createAdaptiveIcons) {
+            lines.push({ depth: 3, text: 'ic_launcher.xml', file: true, res: true });
+            res++;
+          }
+        });
+        if (options.createAdaptiveIcons) {
+          lines.push({ depth: 2, text: 'values/', dir: true });
+          lines.push({ depth: 3, text: 'ic_launcher_background.xml  (#FFFFFF)', file: true, res: true });
+          res++;
+        }
+      } else {
+        var dir = PLATFORM_DIR[p];
+        var parts = dir.split('/');
+        lines.push({ depth: 0, text: parts[0] + '/', dir: true });
+        lines.push({ depth: 1, text: parts[1] + '/', dir: true });
+        lines.push({ depth: 2, text: parts[2] + '/', dir: true });
+        tpl.forEach(function (t) {
+          lines.push({ depth: 3, text: t.name + '  (' + t.size + 'px)', file: true });
+          png++;
+        });
+        if (options.createContentsJson && (p === 'iOS' || p === 'macOS' || p === 'watchOS')) {
+          lines.push({ depth: 3, text: 'Contents.json  (' + tpl.length + ' 条 images)', file: true, res: true });
+          res++;
+        }
+      }
+    } else {
+      tpl.forEach(function (t) {
+        var name = t.name;
+        if (options.prefixFilename) name = p.toLowerCase() + '-' + name;
+        lines.push({ depth: 0, text: name + '  (' + t.size + 'px)', file: true });
+        png++;
+      });
+    }
+  });
+  return { lines: lines, png: png, res: res, platforms: platforms.slice() };
+}
+
+function zipTreeHtml(model) {
+  var html = '';
+  model.lines.forEach(function (l) {
+    var pad = '';
+    for (var i = 0; i < l.depth; i++) pad += '  ';
+    var cls = l.dir ? 'dir' : (l.res ? 'res' : '');
+    html += pad + '<span class="' + cls + '">' + esc(l.text) + '</span>\n';
+  });
+  return html;
+}
+
+/* ---------- 生成（F010/F011 + B/FL-03 平台级进度） ---------- */
+function handleGenerate() {
+  if (!state.file || state.platforms.length === 0) {
+    notify('error', '请选择图像并至少选择一个平台');
+    return;
+  }
+  if (state.generating) return;
+  state.generating = true;
+  var loadingId = notify('info', '正在生成图标，请稍候...', 0);
+  (function (lid) { var stack = $('notificationStack'); for (var i = 0; i < stack.children.length; i++) stack.children[i].dataset.notifyId = stack.children[i].dataset.notifyId || ''; })(loadingId);
+  /* 标记常驻项：队列中最新 info 项 */
+  var stack = $('notificationStack');
+  var loadingEl = stack.children[stack.children.length - 1];
+  loadingEl.dataset.notifyId = String(loadingId);
+  var msgEl = loadingEl.lastChild;
+
+  var queue = state.platforms.slice();
+  var step = 0;
+  var totalSteps = 0;
+  queue.forEach(function (p) { totalSteps += ICON_TEMPLATES[p].length; });
+
+  function tick() {
+    if (step >= totalSteps) {
+      state.generating = false;
+      state.generated = true;
+      state.generatedConfigKey = configKey();
+      hideNotify(loadingId);
+      renderResult();
+      $('resultSection').style.display = 'block';
+      $('resultSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      notify('success', '图标已成功生成，可以下载');
+      updateReadout();
+      return;
+    }
+    /* 计算当前平台与进度（FL-03：平台级进度） */
+    var acc = 0, curPlat = queue[0], idxInPlat = 0;
+    for (var i = 0; i < queue.length; i++) {
+      var len = ICON_TEMPLATES[queue[i]].length;
+      if (step < acc + len) { curPlat = queue[i]; idxInPlat = step - acc + 1; break; }
+      acc += len;
+    }
+    var doneList = [];
+    acc = 0;
+    for (var j = 0; j < queue.length; j++) {
+      var l2 = ICON_TEMPLATES[queue[j]].length;
+      if (step >= acc + l2) doneList.push(queue[j] + ' ✓');
+      acc += l2;
+    }
+    msgEl.textContent = '正在生成图标，请稍候... ' + (doneList.length ? doneList.join(' · ') + ' · ' : '') + curPlat + ' ' + idxInPlat + '/' + ICON_TEMPLATES[curPlat].length;
+    step++;
+    state.generatingTimers.push(setTimeout(tick, 120));
+  }
+  tick();
+}
+
+/* ---------- 结果渲染（FN-02/PG-01：Tab+网格+计数+ZIP 树） ---------- */
+var lastZipModel = null;
+
+function renderResult() {
+  var model = buildZipModel(state.platforms, state.options);
+  lastZipModel = model;
+  $('staleBanner').classList.remove('show');
+
+  /* 汇总计数 */
+  var summary = document.createElement('span');
+  summary.className = 'rs-chip';
+  summary.innerHTML = '平台 <b>' + model.platforms.length + '</b> 个';
+  $('resultSummary').innerHTML = '';
+  $('resultSummary').appendChild(summary);
+  var s2 = document.createElement('span');
+  s2.className = 'rs-chip';
+  s2.innerHTML = '图标 PNG <b>' + model.png + '</b> 个';
+  $('resultSummary').appendChild(s2);
+  var s3 = document.createElement('span');
+  s3.className = 'rs-chip';
+  s3.innerHTML = '资源文件 <b>' + model.res + '</b> 个' + (state.options.createSubFolders ? '' : '（扁平模式不生成资源文件）');
+  $('resultSummary').appendChild(s3);
+
+  /* 平台 Tab（含"全部"） */
+  var tabs = $('resultTabs');
+  tabs.innerHTML = '';
+  var allTab = document.createElement('button');
+  allTab.type = 'button';
+  allTab.className = 'result-tab active';
+  allTab.dataset.platform = 'all';
+  allTab.textContent = '全部 (' + model.png + ')';
+  tabs.appendChild(allTab);
+  model.platforms.forEach(function (p) {
+    var t = document.createElement('button');
+    t.type = 'button';
+    t.className = 'result-tab';
+    t.dataset.platform = p;
+    t.textContent = p + ' (' + ICON_TEMPLATES[p].length + ')';
+    tabs.appendChild(t);
+  });
+
+  /* 图标网格（占位缩略图 + 文件名 + 尺寸；启用旧版孤儿设计 FN-02） */
+  renderGrid('all');
+  renderTemplateTable();
+
+  /* ZIP 树 */
+  $('zipTree').innerHTML = zipTreeHtml(model);
+}
+
+function renderGrid(filter) {
+  var grid = $('iconGrid');
+  grid.innerHTML = '';
+  state.platforms.forEach(function (p) {
+    if (filter !== 'all' && filter !== p) return;
+    ICON_TEMPLATES[p].forEach(function (t) {
+      var item = document.createElement('div');
+      item.className = 'icon-item';
+      item.dataset.platform = p;
+      var name = t.name;
+      if (!state.options.createSubFolders && state.options.prefixFilename) name = p.toLowerCase() + '-' + name;
+      var thumbSize = Math.max(28, Math.min(64, Math.round(t.size / 8)));
+      item.innerHTML = '<div class="ii-thumb" style="width:' + thumbSize + 'px;height:' + thumbSize + 'px;">' + t.size + '</div>' +
+        '<div class="icon-name" title="' + esc(name) + '">' + esc(name) + '</div>' +
+        '<div class="icon-size">' + t.size + '×' + t.size + 'px · ' + p + '</div>';
+      grid.appendChild(item);
+    });
+  });
+}
+
+/* ---------- 下载（F012：模拟打包层） ---------- */
+function downloadAllIcons() {
+  if (!state.file) {
+    notify('error', '没有可供下载的图标');
+    return;
+  }
+  if (state.generating) return;
+  var id = notify('info', '正在准备下载...', 0);
+  var stack = $('notificationStack');
+  var el = stack.children[stack.children.length - 1];
+  el.dataset.notifyId = String(id);
+  setTimeout(function () {
+    /* B/FN-09：直接复用当前配置组包（与旧版"重新生成再组包"等价的输出，但结果可预期——配置变更已有过期提示） */
+    var model = buildZipModel(state.platforms, state.options);
+    hideNotify(id);
+    $('zipModalSummary').innerHTML = '<b>app-icons.zip</b> · ' + model.platforms.length + ' 个平台 · ' + model.png + ' 个图标 PNG · ' + model.res + ' 个资源文件（' +
+      (state.options.createSubFolders ? '子文件夹模式' : '扁平模式' + (state.options.prefixFilename ? ' + 平台前缀' : '')) + '）';
+    $('zipModalTree').innerHTML = zipTreeHtml(model);
+    $('modalZip').classList.add('open');
+    notify('success', '下载已开始');
+  }, 900);
+}
+
+/* ---------- 重置（F013；B/FN-01：单次绑定——本原型 resetApp 仅绑定一次） ---------- */
+function resetApp() {
+  state.file = null;
+  state.generated = false;
+  state.generatedConfigKey = '';
+  clearGeneratingTimers();
+  state.generating = false;
+  var dz = $('dropArea');
+  dz.classList.add('empty');
+  dz.classList.remove('loaded');
+  $('uploadContent').classList.add('visible');
+  $('previewContent').classList.remove('visible');
+  var fig = $('previewFigure');
+  fig.style.background = '';
+  fig.style.color = '';
+  fig.innerHTML = '预览占位';
+  $('fileInfo').textContent = '未选择文件';
+  $('resultSection').style.display = 'none';
+  $('generateBtn').disabled = true;
+  $('staleBanner').classList.remove('show');
+  notify('info', '应用已重置'); /* 仅一次（旧版双绑定 bug 已修复） */
+  updateReadout();
+}
+
+function clearGeneratingTimers() {
+  state.generatingTimers.forEach(function (t) { clearTimeout(t); });
+  state.generatingTimers = [];
+}
+
+/* ---------- PAGE003：落地页交互 ---------- */
+function initLanding() {
+  /* FAQ 手风琴（互斥，F026） */
+  var faqBtns = document.querySelectorAll('#page003 .faq-question');
+  for (var i = 0; i < faqBtns.length; i++) {
+    faqBtns[i].addEventListener('click', function () {
+      var item = this.parentNode;
+      var wasActive = item.classList.contains('active');
+      var all = document.querySelectorAll('#page003 .faq-item');
+      for (var j = 0; j < all.length; j++) all[j].classList.remove('active');
+      if (!wasActive) item.classList.add('active');
+    });
+  }
+  /* 移动端菜单（B/FN-04 = F029 修复规格：开合 + 点菜单项收起） */
+  $('menuToggle').addEventListener('click', function () {
+    $('lpMenu').classList.toggle('open');
+  });
+  var menuLinks = document.querySelectorAll('#lpMenu a');
+  for (var k = 0; k < menuLinks.length; k++) {
+    menuLinks[k].addEventListener('click', function () {
+      $('lpMenu').classList.remove('open');
+    });
+  }
+  /* 联系表单（B/FN-03 = F028 修复规格：校验 + 成功提示 5s + 重置） */
+  $('contactForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var ok = true;
+    var fields = [
+      { name: 'name', test: function (v) { return v.trim().length > 0; } },
+      { name: 'email', test: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); } },
+      { name: 'message', test: function (v) { return v.trim().length > 0; } }
+    ];
+    fields.forEach(function (f) {
+      var wrap = document.querySelector('#contactForm .form-field[data-field="' + f.name + '"]');
+      var input = wrap.querySelector('input,textarea');
+      var pass = f.test(input.value);
+      wrap.classList.toggle('error', !pass);
+      if (!pass) ok = false;
+    });
+    if (ok) {
+      $('formSuccess').classList.add('show');
+      $('contactForm').reset();
+      setTimeout(function () { $('formSuccess').classList.remove('show'); }, 5000);
+    }
+  });
+  /* 输入时清除错误态 */
+  var inputs = document.querySelectorAll('#contactForm input, #contactForm textarea');
+  for (var m = 0; m < inputs.length; m++) {
+    inputs[m].addEventListener('input', function () {
+      var wrap = this.closest('.form-field');
+      if (wrap) wrap.classList.remove('error');
+    });
+  }
+}
+
+/* ---------- 场景库（五态 + 权限） ---------- */
+function runScenario(scene) {
+  showPage('page002');
+  if (scene === 'normal' || scene === 'empty') {
+    resetSilently();
+    return;
+  }
+  if (scene === 'loading') {
+    resetSilently();
+    state.file = MOCK_FILES['icon-1024.png'];
+    renderPreview();
+    updateGenerateBtn();
+    handleGenerate();
+    /* 慢速观察：把 tick 放慢 —— 直接再触发一轮长耗时（重入被 generating 挡住，改为提示说明） */
+    return;
+  }
+  if (scene === 'success') {
+    resetSilently();
+    state.file = MOCK_FILES['icon-1024.png'];
+    renderPreview();
+    updateGenerateBtn();
+    handleGenerate();
+    return;
+  }
+  if (scene === 'fail') {
+    resetSilently();
+    state.file = MOCK_FILES['icon-1024.png'];
+    renderPreview();
+    updateGenerateBtn();
+    notify('error', '生成图标时出错: 模拟生成失败（场景库注入）');
+    return;
+  }
+  if (scene === 'error') {
+    resetSilently();
+    notify('error', '请选择有效的图像文件');
+    notify('error', '文件大小不能超过5MB');
+    return;
+  }
+  if (scene === 'permission') {
+    resetSilently();
+    notify('error', '文件读取权限被拒：浏览器未授权访问该文件（V1 演示态：旧版无此分支，浏览器 File API 假设场景）');
+    return;
+  }
+}
+
+function resetSilently() {
+  clearGeneratingTimers();
+  state.generating = false;
+  state.file = null;
+  state.generated = false;
+  state.generatedConfigKey = '';
+  var dz = $('dropArea');
+  dz.classList.add('empty');
+  dz.classList.remove('loaded');
+  $('uploadContent').classList.add('visible');
+  $('previewContent').classList.remove('visible');
+  $('fileInfo').textContent = '未选择文件';
+  $('resultSection').style.display = 'none';
+  $('generateBtn').disabled = true;
+  $('staleBanner').classList.remove('show');
+  $('notificationStack').innerHTML = '';
+  updateReadout();
+}
+
+/* ---------- 评审弹层内容 ---------- */
+var COVERAGE = [
+  ['F001', '按钮选择上传', '选择图像 → 文件选择（模拟库/真实 input）', 'ok'],
+  ['F002', '拖放上传', '拖文件到拖放区（dragover 高亮 + drop）', 'ok'],
+  ['F003', '类型校验', 'notes.txt → error「请选择有效的图像文件」', 'ok'],
+  ['F004', '大小校验', '6MB → error「文件大小不能超过5MB」', 'ok'],
+  ['F005', '预览与信息', '文件名/大小/尺寸 单行信息', 'ok'],
+  ['F006', '更换图像', '预览态「更换图像」', 'ok'],
+  ['F007', '非正方形警告', '800×600 → warning 5s（队列下可见）', 'ok'],
+  ['F008', '平台选择', '5 卡默认 iOS+Android，联动生成按钮', 'ok'],
+  ['F009', '输出选项', '4 开关（前缀含生效条件说明）', 'ok'],
+  ['F010', '生成图标', '平台级进度 + 完成滚动定位', 'ok'],
+  ['F011', '结果展示', 'Tab + 网格 + 计数 + ZIP 树（B 类增强）', 'ok'],
+  ['F012', 'ZIP 下载', '模拟打包清单弹窗 + 「下载已开始」', 'ok'],
+  ['F013', '重置', '单次通知（双绑定 bug 已修复）', 'ok'],
+  ['F014', '通知四态', '堆叠队列（B/FL-01）', 'ok'],
+  ['F015', 'iOS 模板 15 项', '模板表/网格/ZIP 树', 'ok'],
+  ['F016', 'Android 模板 11 项', '同上', 'ok'],
+  ['F017', 'macOS 模板 10 项', '同上', 'ok'],
+  ['F018', 'Windows 模板 10 项', '同上', 'ok'],
+  ['F019', 'watchOS 模板 11 项', '同上', 'ok'],
+  ['F020', 'Contents.json', '按选项出现在 ZIP 树（iOS/macOS/watchOS）', 'ok'],
+  ['F021', '自适应 XML', 'values + 每密度 mipmap XML', 'ok'],
+  ['F022', '子文件夹结构', '标准目录树', 'ok'],
+  ['F023', '平台前缀', '扁平模式 ios-/android- 前缀', 'ok'],
+  ['F024', '主页展示', 'PAGE001 全区块', 'ok'],
+  ['F025', '自动部署', 'CI 产物，原型以说明覆盖', 'note'],
+  ['F026', '落地页展示与动效', 'FAQ 手风琴/平滑滚动/头部滚动态', 'ok'],
+  ['F027', '落地页下载入口', '4 下载卡（外链拦截提示）', 'ok'],
+  ['F028', '联系表单', 'B 类修复规格：校验+成功提示+重置', 'ok'],
+  ['F029', '移动端菜单', 'B 类修复规格：开合+自动收起（<768px）', 'ok'],
+  ['F030', '系统检测推荐下载', 'C-1 留档：默认不做', 'c'],
+  ['F031', '扩展动效', 'C-2 留档：默认不做', 'c'],
+  ['F032', '桌面壳能力', '以「桌面版差异」说明卡覆盖（范围外）', 'note']
+];
+
+var B_LIST = [
+  ['FN-01', '重置单次绑定（修双绑定 bug）', 'resetApp 仅注册一次；通知「应用已重置」仅出现一次'],
+  ['FN-02', '启用结果图标网格', '结果区渲染缩略图网格 + 文件名 + 尺寸'],
+  ['FN-03/F028', '落地页联系表单修复规格', '必填校验行内标红 + 成功提示 5s + 重置'],
+  ['FN-04/F029', '落地页移动端菜单修复规格', '汉堡开合 + 点菜单项收起'],
+  ['FN-09/FL-04', '下载复用与结果过期提示', '配置变更 → 结果区黄条提示；下载按当前配置组包并展示清单'],
+  ['FN-10', 'FAQ 文案对齐真实能力', '移除 favicon/PWA 超承诺；五平台表述与 57 项模板一致'],
+  ['PG-01', '结果区信息层级', '平台 Tab + 网格 + PNG/资源计数 + ZIP 目录树'],
+  ['PG-02', '拖放区整区可点击', '空态整区 cursor:pointer，点击即选文件（文案承诺兑现）'],
+  ['PG-03', '工具页返回主页入口', 'header 左上「← Icon Gen · 返回主页」'],
+  ['PG-04', '统一 DS tokens', '三页共用 :root token 集（#4a7bff 基线）'],
+  ['PG-05', '平台卡图标+数量徽标', '5 平台内联 SVG + 「N 个尺寸」徽标'],
+  ['PG-06', '前缀选项生效条件说明', '「仅在不创建子文件夹时生效」行内标注'],
+  ['PG-07', '落地页死链处置', '法律信息死链删除线标注不伪造；贡献指南改指仓库'],
+  ['FL-01', '通知堆叠队列', 'warning 与 success 并存可见；最多 3 条'],
+  ['FL-02', 'JSZip 去 CDN（架构项）', '原型模拟层；真实重开发构建期内置（P7）'],
+  ['FL-03', '平台级生成进度', '常驻通知内「iOS ✓ · Android 3/11」进度']
+];
+
+var C_LIST = [
+  ['C-1 / F030', '落地页系统检测推荐下载卡：补实现还是砍除死 JS？', '默认不做（V1 无推荐徽标）'],
+  ['C-2 / F031', '落地页扩展动效（打字机/预览弹窗/主题切换/复制/版本号）：补元素还是删死代码？', '默认不做'],
+  ['C-3 / FN-07', '「单个下载」入口：README 承诺未实现，补功能还是修 README？', '默认不做（README 勘误建议已登记 P4 §6 A-03）'],
+  ['C-4 / FN-12', '桌面壳（Electron）去留：保留需修 4 项差异（模板/选项 bug/品牌/Electron 版本+死链）；放弃则移除 desktop/', '默认不做（P7 建议：V1 聚焦 web，桌面壳暂缓）'],
+  ['C-5 / PG-08', 'landing-page 去留与品牌统一：双主页职责重叠、iconsize vs Icon Gen、部署域名【未知】', '默认不做']
+];
+
+function renderModals() {
+  var rows = '';
+  COVERAGE.forEach(function (r) {
+    var pill = r[3] === 'ok' ? '<span class="pill pill-ok">已覆盖</span>' : (r[3] === 'c' ? '<span class="pill pill-c">C 类留档</span>' : '<span class="pill pill-note">说明覆盖</span>');
+    rows += '<tr><td><b>' + r[0] + '</b></td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + pill + '</td></tr>';
+  });
+  $('coverageBody').innerHTML = '<table><thead><tr><th>ID</th><th>功能</th><th>V1 呈现</th><th>状态</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<p style="margin-top:12px; color:var(--color-gray);">浏览器范围 F001-F027 全保留（27/27）；F028/F029 按 B 类修复规格落地；F030/F031 C 类留档；F032 差异说明卡。32 项功能无一丢失、无新增商业功能。</p>';
+
+  rows = '';
+  B_LIST.forEach(function (r) {
+    rows += '<tr><td><b>' + r[0] + '</b></td><td>' + r[1] + '</td><td>' + r[2] + '</td><td><span class="pill pill-ok">已落地</span></td></tr>';
+  });
+  $('bListBody').innerHTML = '<table><thead><tr><th>P4 编号</th><th>优化</th><th>V1 落地方式</th><th>状态</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<p style="margin-top:12px; color:var(--color-gray);">B 类共 11 个编号（FN/PG/FL），其中 PG-06/PG-07/FL-02/FL-03 为配套落地项；全部可在页面实测核验。</p>';
+
+  rows = '';
+  C_LIST.forEach(function (r) {
+    rows += '<tr><td><b>' + r[0] + '</b></td><td>' + r[1] + '</td><td>' + r[2] + '</td></tr>';
+  });
+  $('cListBody').innerHTML = '<table><thead><tr><th>编号</th><th>决策点</th><th>V1 默认处置</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<p style="margin-top:12px; color:var(--color-gray);">C 类问题 V1 均不实现，以留档标注呈现；待用户决策后进入 V1 真实开发范围。</p>';
+}
+
+/* ---------- 事件绑定（统一入口；resetBtn 仅绑定一次 = FN-01 修复） ---------- */
+function init() {
+  /* 页面切换 */
+  var pageBtns = document.querySelectorAll('#pageSwitcher .rp-btn');
+  for (var i = 0; i < pageBtns.length; i++) {
+    pageBtns[i].addEventListener('click', function () { showPage(this.dataset.page); });
+  }
+  /* 站内跳转（data-goto） */
+  document.addEventListener('click', function (e) {
+    var gotoEl = e.target.closest ? e.target.closest('[data-goto]') : null;
+    if (gotoEl) { showPage(gotoEl.dataset.goto); return; }
+    var extEl = e.target.closest ? e.target.closest('.ext-link') : null;
+    if (extEl) {
+      e.preventDefault();
+      notify('info', '已拦截外链（V1 原型零外链）：' + extEl.dataset.url);
+      return;
+    }
+    var anchorEl = e.target.closest ? e.target.closest('[data-anchor]') : null;
+    if (anchorEl) {
+      e.preventDefault();
+      var target = document.getElementById(anchorEl.dataset.anchor);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  });
+
+  /* 场景库 */
+  var sceneBtns = document.querySelectorAll('#scenarioGroup .rp-btn');
+  for (var s = 0; s < sceneBtns.length; s++) {
+    sceneBtns[s].addEventListener('click', function () { runScenario(this.dataset.scene); });
+  }
+  /* 评审弹层 */
+  $('btnCoverage').addEventListener('click', function () { $('modalCoverage').classList.add('open'); });
+  $('btnBList').addEventListener('click', function () { $('modalBList').classList.add('open'); });
+  $('btnCList').addEventListener('click', function () { $('modalCList').classList.add('open'); });
+  $('btnF032').addEventListener('click', function () { $('modalF032').classList.add('open'); });
+  var closers = document.querySelectorAll('.modal-close');
+  for (var c = 0; c < closers.length; c++) {
+    closers[c].addEventListener('click', function () { $(this.dataset.close).classList.remove('open'); });
+  }
+  var masks = document.querySelectorAll('.modal-mask');
+  for (var mm = 0; mm < masks.length; mm++) {
+    masks[mm].addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
+  }
+  renderModals();
+
+  /* --- PAGE002 上传 --- */
+  $('uploadBtn').addEventListener('click', function (e) { e.stopPropagation(); $('fileInput').click(); });
+  $('changeImageBtn').addEventListener('click', function (e) { e.stopPropagation(); $('fileInput').click(); });
+  $('fileInput').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    if (f) {
+      var url = URL.createObjectURL(f);
+      var probe = new Image();
+      probe.onload = function () {
+        URL.revokeObjectURL(url);
+        processFile({ name: f.name, type: f.type, size: f.size, width: probe.width, height: probe.height });
+      };
+      probe.onerror = function () {
+        URL.revokeObjectURL(url);
+        processFile({ name: f.name, type: f.type || 'image/png', size: f.size, width: 0, height: 0, broken: true });
+      };
+      probe.src = url;
+    }
+  });
+  /* B/PG-02：空态整区可点击 */
+  $('dropArea').addEventListener('click', function () {
+    if (state.file === null) $('fileInput').click();
+  });
+  $('dropArea').addEventListener('dragover', function (e) { e.preventDefault(); this.classList.add('drag-active'); });
+  $('dropArea').addEventListener('dragleave', function (e) { e.preventDefault(); this.classList.remove('drag-active'); });
+  $('dropArea').addEventListener('drop', function (e) {
+    e.preventDefault();
+    this.classList.remove('drag-active');
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    var url = URL.createObjectURL(f);
+    var probe = new Image();
+    var self = this;
+    probe.onload = function () {
+      URL.revokeObjectURL(url);
+      processFile({ name: f.name, type: f.type, size: f.size, width: probe.width, height: probe.height });
+    };
+    probe.onerror = function () {
+      URL.revokeObjectURL(url);
+      processFile({ name: f.name, type: f.type || 'image/png', size: f.size, width: 0, height: 0, broken: true });
+    };
+    probe.src = url;
+  });
+  /* 模拟文件库 */
+  var mocks = document.querySelectorAll('.mock-btn');
+  for (var mk = 0; mk < mocks.length; mk++) {
+    mocks[mk].addEventListener('click', function () {
+      var f = MOCK_FILES[this.dataset.file];
+      processFile(f);
+    });
+  }
+
+  /* --- 平台卡（F008） --- */
+  var cards = document.querySelectorAll('.platform-card');
+  for (var pc = 0; pc < cards.length; pc++) {
+    cards[pc].addEventListener('click', function () {
+      var p = this.dataset.platform;
+      var idx = state.platforms.indexOf(p);
+      if (idx >= 0) state.platforms.splice(idx, 1); else state.platforms.push(p);
+      this.classList.toggle('selected', state.platforms.indexOf(p) >= 0);
+      updateGenerateBtn();
+      markStaleIfNeeded();
+      renderTemplateTable();
+    });
+  }
+
+  /* --- 输出选项（F009） --- */
+  ['createSubFolders', 'prefixFilename', 'createContentsJson', 'createAdaptiveIcons'].forEach(function (key) {
+    $(key).addEventListener('change', function () {
+      state.options[key] = this.checked;
+      if (state.generated) {
+        /* 选项变更：结果即时反映（网格前缀/树重绘）+ 过期逻辑按配置键对比 */
+        renderResultIfGenerated();
+      }
+      markStaleIfNeeded();
+    });
+  });
+
+  /* --- 折叠面板 --- */
+  $('templateFoldBtn').addEventListener('click', function () {
+    var fold = $('templateFold');
+    fold.classList.toggle('open');
+    this.querySelector('span:last-child').textContent = fold.classList.contains('open') ? '收起 ▴' : '展开 ▾';
+  });
+  $('zipFoldBtn').addEventListener('click', function () {
+    var fold = $('zipFold');
+    fold.classList.toggle('open');
+    this.querySelector('span:last-child').textContent = fold.classList.contains('open') ? '收起 ▴' : '展开 ▾';
+  });
+
+  /* --- 结果 Tab 过滤（FN-02 启用旧版 filterResults 设计） --- */
+  $('resultTabs').addEventListener('click', function (e) {
+    if (e.target.classList.contains('result-tab')) {
+      var tabs = this.querySelectorAll('.result-tab');
+      for (var t = 0; t < tabs.length; t++) tabs[t].classList.toggle('active', tabs[t] === e.target);
+      renderGrid(e.target.dataset.platform);
+    }
+  });
+
+  /* --- 主按钮 --- */
+  $('generateBtn').addEventListener('click', handleGenerate);
+  $('resetBtn').addEventListener('click', resetApp); /* 仅此一处绑定（FN-01 修复） */
+  $('downloadZipBtn').addEventListener('click', downloadAllIcons);
+
+  /* --- PAGE003 --- */
+  initLanding();
+
+  /* --- 头部滚动态（F026：>100px） --- */
+  $('viewport').addEventListener('scroll', function () {
+    var lp = $('lpHeader');
+    if (lp) lp.classList.toggle('scrolled', this.scrollTop > 100);
+  });
+
+  updateGenerateBtn();
+  renderTemplateTable();
+  updateReadout();
+}
+
+function renderResultIfGenerated() {
+  if (!state.generated) return;
+  renderResult();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
